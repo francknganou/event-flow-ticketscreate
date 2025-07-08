@@ -44,9 +44,11 @@ const Index = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button variant="hero" size="lg">
-            Voir tous les événements
-          </Button>
+          <a href="/events">
+            <Button variant="hero" size="lg">
+              Voir tous les événements
+            </Button>
+          </a>
         </div>
       </section>
       

@@ -26,14 +26,18 @@ export const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-            <Button variant="hero" size="lg" className="font-semibold">
-              <Search className="w-5 h-5 mr-2" />
-              Explorer les événements
-            </Button>
-            <Button variant="outline" size="lg" className="bg-background/10 backdrop-blur-sm border-white/20 text-foreground hover:bg-background/20">
-              <CalendarCheck className="w-5 h-5 mr-2" />
-              Mes réservations
-            </Button>
+            <a href="/login">
+              <Button variant="hero" size="lg" className="font-semibold">
+                <Search className="w-5 h-5 mr-2" />
+                Explorer les événements
+              </Button>
+            </a>
+            <a href="/my-tickets">
+              <Button variant="outline" size="lg" className="bg-background/10 backdrop-blur-sm border-white/20 text-foreground hover:bg-background/20">
+                <CalendarCheck className="w-5 h-5 mr-2" />
+                Mes réservations
+              </Button>
+            </a>
           </div>
           
           {/* Stats */}
