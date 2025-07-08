@@ -1,3 +1,12 @@
+export interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  availableQuantity: number;
+  description?: string;
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -9,6 +18,8 @@ export interface Event {
   availableTickets: number;
   category: string;
   description: string;
+  ticketTypes?: TicketType[];
+  createdBy?: string;
 }
 
 export const mockEvents: Event[] = [

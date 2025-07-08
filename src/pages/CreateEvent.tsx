@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, MapPin, Users, Euro } from "lucide-react";
+import { Calendar, MapPin, Users, Euro, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Event, TicketType } from "@/data/events";
 
 const CreateEvent = () => {
   const [formData, setFormData] = useState({
@@ -22,13 +23,36 @@ const CreateEvent = () => {
     image: ""
   });
   
+  const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
+    { id: "1", name: "Standard", price: 0, quantity: 0, availableQuantity: 0 }
+  ]);
+  
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulation de création d'événement
-    console.log("Événement créé:", formData);
-    navigate('/dashboard');
+    
+    const newEvent: Event = {
+      id: Date.now().toString(),
+      title: formData.title,
+      description: formData.description,
+      date: `${formData.date}T${formData.time}:00`,
+      location: formData.location,
+      category: formData.category,
+      capacity: parseInt(formData.capacity),
+      price: parseFloat(formData.price),
+      availableTickets: parseInt(formData.capacity),
+      image: "https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=400&h=300&fit=crop",
+      ticketTypes: ticketTypes,
+      createdBy: "current-user"
+    };
+
+    // Sauvegarder l'événement dans le localStorage
+    const existingEvents = JSON.parse(localStorage.getItem('userEvents') || '[]');
+    const updatedEvents = [...existingEvents, newEvent];
+    localStorage.setItem('userEvents', JSON.stringify(updatedEvents));
+    
+    navigate('/events');
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -36,6 +60,33 @@ const CreateEvent = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const addTicketType = () => {
+    const newTicketType: TicketType = {
+      id: Date.now().toString(),
+      name: "",
+      price: 0,
+      quantity: 0,
+      availableQuantity: 0
+    };
+    setTicketTypes([...ticketTypes, newTicketType]);
+  };
+
+  const removeTicketType = (id: string) => {
+    setTicketTypes(ticketTypes.filter(ticket => ticket.id !== id));
+  };
+
+  const updateTicketType = (id: string, field: keyof TicketType, value: string | number) => {
+    setTicketTypes(ticketTypes.map(ticket => 
+      ticket.id === id 
+        ? { 
+            ...ticket, 
+            [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
+            ...(field === 'quantity' ? { availableQuantity: typeof value === 'string' ? parseFloat(value) || 0 : value } : {})
+          }
+        : ticket
+    ));
   };
 
   return (
@@ -178,6 +229,72 @@ const CreateEvent = () => {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Ticket Types */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Types de tickets</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addTicketType}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter un type
+                    </Button>
+                  </div>
+                  
+                  {ticketTypes.map((ticket, index) => (
+                    <Card key={ticket.id} className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nom du ticket</Label>
+                          <Input
+                            value={ticket.name}
+                            onChange={(e) => updateTicketType(ticket.id, "name", e.target.value)}
+                            placeholder="Ex: Standard, VIP, Étudiant"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Prix (€)</Label>
+                          <Input
+                            type="number"
+                            value={ticket.price}
+                            onChange={(e) => updateTicketType(ticket.id, "price", e.target.value)}
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Quantité</Label>
+                          <Input
+                            type="number"
+                            value={ticket.quantity}
+                            onChange={(e) => updateTicketType(ticket.id, "quantity", e.target.value)}
+                            placeholder="0"
+                            min="1"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="flex items-end">
+                          {ticketTypes.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => removeTicketType(ticket.id)}
+                              className="text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
 
                 {/* Image */}

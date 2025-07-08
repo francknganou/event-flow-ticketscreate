@@ -1,24 +1,31 @@
 import { Header } from "@/components/Header";
 import { EventCard } from "@/components/EventCard";
-import { mockEvents } from "@/data/events";
+import { mockEvents, Event } from "@/data/events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, Search, SortAsc } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [allEvents, setAllEvents] = useState<Event[]>(mockEvents);
 
-  const filteredEvents = mockEvents.filter(event => {
+  useEffect(() => {
+    // Récupérer les événements créés par l'utilisateur
+    const userEvents = JSON.parse(localStorage.getItem('userEvents') || '[]');
+    setAllEvents([...mockEvents, ...userEvents]);
+  }, []);
+
+  const filteredEvents = allEvents.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || event.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["all", ...new Set(mockEvents.map(event => event.category))];
+  const categories = ["all", ...new Set(allEvents.map(event => event.category))];
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,6 +79,17 @@ const Events = () => {
         {filteredEvents.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Aucun événement trouvé</p>
+          </div>
+        )}
+
+        {/* Create Event Button */}
+        {localStorage.getItem('isLoggedIn') === 'true' && (
+          <div className="text-center mt-12">
+            <a href="/create-event">
+              <Button variant="hero" size="lg">
+                Créer mon événement
+              </Button>
+            </a>
           </div>
         )}
       </div>
