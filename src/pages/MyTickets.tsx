@@ -3,35 +3,52 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Ticket, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
 
 const MyTickets = () => {
-  const userTickets = [
-    {
-      id: "1",
-      eventTitle: "Festival Électro Summer",
-      date: "2024-08-15T20:00:00",
-      location: "Parc des Expositions, Paris",
-      ticketType: "VIP",
-      quantity: 2,
-      totalPrice: 90,
-      status: "confirmed",
-      qrCode: "QR123456789"
+  const [userBookings, setUserBookings] = useState<any[]>([]);
+  const { formatPrice, language } = useApp();
+
+  useEffect(() => {
+    const bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+    setUserBookings(bookings);
+  }, []);
+
+  const texts = {
+    fr: {
+      myTickets: 'Mes tickets',
+      manageReservations: 'Gérez vos réservations et téléchargez vos billets',
+      confirmed: 'Confirmé',
+      pending: 'En attente',
+      downloadTicket: 'Télécharger le billet',
+      viewDetails: 'Voir les détails',
+      noTickets: 'Aucun ticket',
+      noTicketsDesc: 'Vous n\'avez pas encore de billets réservés',
+      exploreEvents: 'Explorer les événements',
+      total: 'Total',
+      tickets: 'tickets'
     },
-    {
-      id: "2",
-      eventTitle: "Concert Jazz & Blues",
-      date: "2024-07-20T19:30:00",
-      location: "Théâtre National, Lyon",
-      ticketType: "Standard",
-      quantity: 1,
-      totalPrice: 35,
-      status: "confirmed",
-      qrCode: "QR987654321"
+    en: {
+      myTickets: 'My Tickets',
+      manageReservations: 'Manage your reservations and download your tickets',
+      confirmed: 'Confirmed',
+      pending: 'Pending',
+      downloadTicket: 'Download Ticket',
+      viewDetails: 'View Details',
+      noTickets: 'No Tickets',
+      noTicketsDesc: 'You don\'t have any reserved tickets yet',
+      exploreEvents: 'Explore Events',
+      total: 'Total',
+      tickets: 'tickets'
     }
-  ];
+  };
+
+  const t = texts[language];
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US';
+    return new Date(dateString).toLocaleDateString(locale, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -47,18 +64,18 @@ const MyTickets = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Mes tickets</h1>
-          <p className="text-muted-foreground">Gérez vos réservations et téléchargez vos billets</p>
+          <h1 className="text-4xl font-bold text-foreground mb-4">{t.myTickets}</h1>
+          <p className="text-muted-foreground">{t.manageReservations}</p>
         </div>
 
         <div className="space-y-6">
-          {userTickets.map((ticket) => (
-            <Card key={ticket.id} className="border border-border">
+          {userBookings.map((booking) => (
+            <Card key={booking.id} className="border border-border">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{ticket.eventTitle}</CardTitle>
-                  <Badge variant={ticket.status === 'confirmed' ? 'default' : 'secondary'}>
-                    {ticket.status === 'confirmed' ? 'Confirmé' : 'En attente'}
+                  <CardTitle className="text-xl">{booking.eventTitle}</CardTitle>
+                  <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
+                    {booking.status === 'confirmed' ? t.confirmed : t.pending}
                   </Badge>
                 </div>
               </CardHeader>
@@ -67,28 +84,32 @@ const MyTickets = () => {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="w-4 h-4" />
-                      <span>{formatDate(ticket.date)}</span>
+                      <span>{formatDate(booking.date)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="w-4 h-4" />
-                      <span>{ticket.location}</span>
+                      <span>{booking.location}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Ticket className="w-4 h-4" />
-                      <span>{ticket.quantity} x {ticket.ticketType}</span>
+                      <span>
+                        {Object.entries(booking.tickets || {}).map(([ticketId, quantity]: [string, any]) => 
+                          `${quantity} ${t.tickets}`
+                        ).join(', ')}
+                      </span>
                     </div>
                     <div className="text-lg font-semibold text-foreground">
-                      Total: {ticket.totalPrice}€
+                      {t.total}: {formatPrice(booking.total)}
                     </div>
                   </div>
                   
                   <div className="flex flex-col gap-3">
                     <Button variant="hero" className="w-full">
                       <Download className="w-4 h-4 mr-2" />
-                      Télécharger le billet
+                      {t.downloadTicket}
                     </Button>
                     <Button variant="outline" className="w-full">
-                      Voir les détails
+                      {t.viewDetails}
                     </Button>
                   </div>
                 </div>
@@ -97,12 +118,14 @@ const MyTickets = () => {
           ))}
         </div>
 
-        {userTickets.length === 0 && (
+        {userBookings.length === 0 && (
           <div className="text-center py-12">
             <Ticket className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Aucun ticket</h3>
-            <p className="text-muted-foreground mb-4">Vous n'avez pas encore de billets réservés</p>
-            <Button variant="hero">Explorer les événements</Button>
+            <h3 className="text-xl font-semibold text-foreground mb-2">{t.noTickets}</h3>
+            <p className="text-muted-foreground mb-4">{t.noTicketsDesc}</p>
+            <a href="/events">
+              <Button variant="hero">{t.exploreEvents}</Button>
+            </a>
           </div>
         )}
       </div>
