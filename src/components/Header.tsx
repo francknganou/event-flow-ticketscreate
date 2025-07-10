@@ -5,16 +5,21 @@ import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const role = localStorage.getItem('userRole') || '';
     setIsLoggedIn(loggedIn);
+    setUserRole(role);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
     setIsLoggedIn(false);
+    setUserRole("");
     navigate('/');
   };
 
@@ -45,12 +50,14 @@ export const Header = () => {
         <div className="flex items-center gap-2">
           {isLoggedIn ? (
             <>
-              <a href="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </a>
+              {userRole === 'admin' && (
+                <a href="/dashboard">
+                  <Button variant="ghost" size="sm">
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </a>
+              )}
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Déconnexion
               </Button>

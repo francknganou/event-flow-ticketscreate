@@ -1,7 +1,7 @@
-import { Calendar, MapPin, Users, Ticket } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookingModal } from "@/pages/BookingModal";
 import { useApp } from "@/contexts/AppContext";
@@ -12,8 +12,14 @@ interface EventCardProps extends Event {}
 export const EventCard = (props: EventCardProps) => {
   const { title, date, location, price, image, capacity, availableTickets, category } = props;
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const { formatPrice, language } = useApp();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') || '';
+    setUserRole(role);
+  }, []);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const locale = language === 'fr' ? 'fr-FR' : 'en-US';
@@ -40,6 +46,13 @@ export const EventCard = (props: EventCardProps) => {
       return;
     }
     setIsBookingOpen(true);
+  };
+
+  const handleDeleteEvent = () => {
+    const userEvents = JSON.parse(localStorage.getItem('userEvents') || '[]');
+    const updatedEvents = userEvents.filter((event: Event) => event.id !== props.id);
+    localStorage.setItem('userEvents', JSON.stringify(updatedEvents));
+    window.location.reload();
   };
 
   const texts = {
@@ -87,7 +100,7 @@ export const EventCard = (props: EventCardProps) => {
           </div>
         </div>
         
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
           <Button 
             variant="hero" 
             size="sm" 
@@ -98,6 +111,18 @@ export const EventCard = (props: EventCardProps) => {
             <Ticket className="w-4 h-4 mr-2" />
             {availableTickets === 0 ? t.full : t.reserve}
           </Button>
+          
+          {userRole === 'admin' && (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="w-full"
+              onClick={handleDeleteEvent}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {language === 'fr' ? 'Supprimer' : 'Delete'}
+            </Button>
+          )}
         </div>
       
       <BookingModal 

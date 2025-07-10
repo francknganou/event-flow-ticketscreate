@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Ticket } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -10,12 +11,14 @@ import { useState } from "react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userRole, setUserRole] = useState("user");
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Simulation de connexion réussie
     localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', userRole);
     navigate('/events');
   };
 
@@ -57,6 +60,20 @@ const Login = () => {
                     placeholder="••••••••"
                     required
                   />
+                </div>
+                
+                <div className="space-y-3">
+                  <Label>Type de compte</Label>
+                  <RadioGroup value={userRole} onValueChange={setUserRole} className="flex flex-col space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="user" id="user" />
+                      <Label htmlFor="user">Utilisateur</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="admin" id="admin" />
+                      <Label htmlFor="admin">Administrateur</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
                 
                 <Button type="submit" variant="hero" className="w-full">
