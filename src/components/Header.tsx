@@ -1,12 +1,13 @@
-import { Ticket, User } from "lucide-react";
+import { Ticket, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -16,12 +17,17 @@ export const Header = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
+    localStorage.clear(); // Supprimer toutes les données stockées
     setIsLoggedIn(false);
     setUserRole("");
     navigate('/');
   };
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  const showBackButton = location.pathname !== '/';
 
   return (
     <header className="bg-background/95 backdrop-blur-md border-b border-border sticky top-0 z-50">
@@ -48,6 +54,12 @@ export const Header = () => {
         </nav>
         
         <div className="flex items-center gap-2">
+          {showBackButton && (
+            <Button variant="ghost" size="sm" onClick={handleGoBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour
+            </Button>
+          )}
           {isLoggedIn ? (
             <>
               {userRole === 'admin' && (

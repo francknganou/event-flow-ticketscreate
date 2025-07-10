@@ -16,9 +16,12 @@ const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulation de connexion réussie
+    // Supprimer toutes les connexions précédentes
+    localStorage.clear();
+    // Simulation de connexion réussie avec un seul rôle
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', userRole);
+    localStorage.setItem('userEmail', email);
     navigate('/events');
   };
 
