@@ -1,13 +1,33 @@
-import { useState } from 'react';
-import { Settings as SettingsIcon, Globe, DollarSign, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Globe, DollarSign, X, Users, Shield, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/contexts/AppContext';
+import { QRScanner } from './QRScanner';
 
 export const Settings = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [maxUsers, setMaxUsers] = useState('100');
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const { currency, language, setCurrency, setLanguage } = useApp();
+
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    setIsAdmin(userRole === 'admin');
+    
+    // Charger les paramètres admin
+    const savedMaxUsers = localStorage.getItem('maxUsers') || '100';
+    const savedRegistrationEnabled = localStorage.getItem('registrationEnabled') !== 'false';
+    setMaxUsers(savedMaxUsers);
+    setRegistrationEnabled(savedRegistrationEnabled);
+  }, []);
 
   const texts = {
     fr: {
@@ -16,7 +36,12 @@ export const Settings = () => {
       currency: 'Devise',
       french: 'Français',
       english: 'English',
-      close: 'Fermer'
+      close: 'Fermer',
+      scanQR: 'Scanner QR Code',
+      adminSettings: 'Paramètres Administrateur',
+      maxUsers: 'Nombre maximum d\'utilisateurs',
+      enableRegistration: 'Autoriser les inscriptions',
+      save: 'Sauvegarder'
     },
     en: {
       settings: 'Settings',
@@ -24,11 +49,21 @@ export const Settings = () => {
       currency: 'Currency',
       french: 'Français',
       english: 'English',
-      close: 'Close'
+      close: 'Close',
+      scanQR: 'Scan QR Code',
+      adminSettings: 'Administrator Settings',
+      maxUsers: 'Maximum number of users',
+      enableRegistration: 'Enable registrations',
+      save: 'Save'
     }
   };
 
   const t = texts[language];
+
+  const handleSaveAdminSettings = () => {
+    localStorage.setItem('maxUsers', maxUsers);
+    localStorage.setItem('registrationEnabled', registrationEnabled.toString());
+  };
 
   return (
     <>
@@ -96,6 +131,62 @@ export const Settings = () => {
                 </Select>
               </div>
 
+              {/* QR Scanner Button */}
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => setIsQRScannerOpen(true)} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  {t.scanQR}
+                </Button>
+              </div>
+
+              {/* Admin Settings */}
+              {isAdmin && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      <label className="text-sm font-medium">{t.adminSettings}</label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="maxUsers">{t.maxUsers}</Label>
+                      <Input
+                        id="maxUsers"
+                        type="number"
+                        value={maxUsers}
+                        onChange={(e) => setMaxUsers(e.target.value)}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        <Label htmlFor="registration">{t.enableRegistration}</Label>
+                      </div>
+                      <Switch
+                        id="registration"
+                        checked={registrationEnabled}
+                        onCheckedChange={setRegistrationEnabled}
+                      />
+                    </div>
+
+                    <Button 
+                      onClick={handleSaveAdminSettings}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      {t.save}
+                    </Button>
+                  </div>
+                </>
+              )}
+
               <Button 
                 onClick={() => setIsOpen(false)} 
                 variant="hero" 
@@ -107,6 +198,12 @@ export const Settings = () => {
           </Card>
         </div>
       )}
+
+      {/* QR Scanner Modal */}
+      <QRScanner 
+        isOpen={isQRScannerOpen} 
+        onClose={() => setIsQRScannerOpen(false)} 
+      />
     </>
   );
 };

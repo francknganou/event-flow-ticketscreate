@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Ticket } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Ticket, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -17,12 +18,23 @@ const Signup = () => {
     confirmPassword: "",
     acceptTerms: false
   });
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const isEnabled = localStorage.getItem('registrationEnabled') !== 'false';
+    setRegistrationEnabled(isEnabled);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!registrationEnabled) {
+      return;
+    }
     // Simulation d'inscription réussie
     localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', 'user');
+    localStorage.setItem('userEmail', formData.email);
     navigate('/events');
   };
 
@@ -39,6 +51,14 @@ const Signup = () => {
       
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
+          {!registrationEnabled && (
+            <Alert className="mb-6 border-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Les inscriptions sont actuellement désactivées par l'administrateur.
+              </AlertDescription>
+            </Alert>
+          )}
           <Card className="border border-border">
             <CardHeader className="text-center">
               <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -123,7 +143,12 @@ const Signup = () => {
                   </Label>
                 </div>
                 
-                <Button type="submit" variant="hero" className="w-full">
+                <Button 
+                  type="submit" 
+                  variant="hero" 
+                  className="w-full"
+                  disabled={!registrationEnabled}
+                >
                   Créer mon compte
                 </Button>
               </form>

@@ -67,6 +67,14 @@ export const BookingModal = ({ event, isOpen, onClose }: BookingModalProps) => {
 
   const defaultTicketTypes: TicketType[] = [
     {
+      id: '0',
+      name: 'Gratuit',
+      price: 0,
+      quantity: event.availableTickets,
+      availableQuantity: event.availableTickets,
+      description: 'Ticket gratuit'
+    },
+    {
       id: '1',
       name: 'Standard',
       price: event.price,
@@ -113,10 +121,16 @@ export const BookingModal = ({ event, isOpen, onClose }: BookingModalProps) => {
         eventTitle: event.title,
         date: event.date,
         location: event.location,
-        user: userInfo,
+        user: {
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          email: userInfo.email,
+          phone: userInfo.phone
+        },
         tickets: selectedTickets,
         total: calculateTotal(),
         bookingId: Date.now().toString(),
+        purchaseDate: new Date().toISOString(),
         timestamp: new Date().toISOString()
       });
       
