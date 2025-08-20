@@ -246,12 +246,24 @@ const CreateEvent = () => {
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <Label>Nom du ticket</Label>
-                          <Input
-                            value={ticket.name}
-                            onChange={(e) => updateTicketType(ticket.id, "name", e.target.value)}
-                            placeholder="Ex: Standard, VIP, Étudiant"
-                            required
-                          />
+                          <Select 
+                            value={ticket.name} 
+                            onValueChange={(value) => updateTicketType(ticket.id, "name", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionnez un type de ticket" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Gratuit">Gratuit</SelectItem>
+                              <SelectItem value="Standard">Standard</SelectItem>
+                              <SelectItem value="VIP">VIP</SelectItem>
+                              <SelectItem value="Étudiant">Étudiant</SelectItem>
+                              <SelectItem value="Groupe">Groupe</SelectItem>
+                              <SelectItem value="Enfant">Enfant</SelectItem>
+                              <SelectItem value="Senior">Senior</SelectItem>
+                              <SelectItem value="Membre">Membre</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         
                         <div className="space-y-2">

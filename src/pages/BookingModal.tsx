@@ -207,8 +207,8 @@ export const BookingModal = ({ event, isOpen, onClose }: BookingModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto">
-      <Card className="w-full max-w-2xl mx-4 my-8 border-border">
+    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto">
+      <Card className="w-full h-full rounded-none border-0 bg-background">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{bookingComplete ? t.success : t.booking}</CardTitle>
           <Button
@@ -221,7 +221,7 @@ export const BookingModal = ({ event, isOpen, onClose }: BookingModalProps) => {
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-6 max-w-4xl mx-auto">
           {!bookingComplete ? (
             <>
               {/* Event Info */}
