@@ -104,6 +104,7 @@ All colors MUST be HSL.
   }
 }
 
+<<<<<<< HEAD
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -115,12 +116,15 @@ All colors MUST be HSL.
   }
 }
 
+=======
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
+<<<<<<< HEAD
     @apply text-foreground;
     position: relative;
     isolation: isolate;
@@ -148,3 +152,8 @@ body::after {
   z-index: -1;
   background: linear-gradient(180deg, rgba(5, 5, 10, .24), rgba(5, 5, 10, .38));
 }
+=======
+    @apply bg-background text-foreground;
+  }
+}
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761

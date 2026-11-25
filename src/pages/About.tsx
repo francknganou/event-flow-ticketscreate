@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 
+=======
+import { Header } from "@/components/Header";
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Calendar, Star, Shield } from "lucide-react";
 
@@ -27,8 +31,13 @@ const About = () => {
   ];
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-transparent">
       
+=======
+    <div className="min-h-screen bg-background">
+      <Header />
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

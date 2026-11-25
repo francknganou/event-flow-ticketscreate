@@ -11,10 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+<<<<<<< HEAD
 api/.ticket-secret
 .env
 .env.*
 !.env.example
+=======
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 
 # Editor directories and files
 .vscode/*

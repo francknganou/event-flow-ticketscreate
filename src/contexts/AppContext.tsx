@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { translate, TranslationKey, Language } from '@/lib/translations';
 
 interface AppContextType {
@@ -10,6 +11,14 @@ interface AppContextType {
   setCurrency: (currency: string) => void;
   setLanguage: (language: Language) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
+=======
+
+interface AppContextType {
+  currency: 'FCFA' | 'EURO' | 'DOLLARS';
+  language: 'fr' | 'en';
+  setCurrency: (currency: 'FCFA' | 'EURO' | 'DOLLARS') => void;
+  setLanguage: (language: 'fr' | 'en') => void;
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   formatPrice: (price: number) => string;
 }
 
@@ -24,6 +33,7 @@ export const useApp = () => {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+<<<<<<< HEAD
   const [currency, setCurrency] = useState<string>('EUR');
   const [currencies,setCurrencies]=useState<{code:string;name:string}[]>([{code:'EUR',name:'Euro'},{code:'USD',name:'US Dollar'},{code:'XAF',name:'CFA Franc BEAC'}]);
   const [rates,setRates]=useState<Record<string,number>>({EUR:1,USD:1.1,XAF:655.957});
@@ -64,15 +74,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { document.documentElement.lang = language;document.documentElement.dir=language==='ar'?'rtl':'ltr'; }, [language]);
 
   const handleSetCurrency = (newCurrency: string) => {
+=======
+  const [currency, setCurrency] = useState<'FCFA' | 'EURO' | 'DOLLARS'>('EURO');
+  const [language, setLanguage] = useState<'fr' | 'en'>('fr');
+
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem('currency') as 'FCFA' | 'EURO' | 'DOLLARS';
+    const savedLanguage = localStorage.getItem('language') as 'fr' | 'en';
+    
+    if (savedCurrency) setCurrency(savedCurrency);
+    if (savedLanguage) setLanguage(savedLanguage);
+  }, []);
+
+  const handleSetCurrency = (newCurrency: 'FCFA' | 'EURO' | 'DOLLARS') => {
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     setCurrency(newCurrency);
     localStorage.setItem('currency', newCurrency);
   };
 
+<<<<<<< HEAD
   const handleSetLanguage = (newLanguage: Language) => {
+=======
+  const handleSetLanguage = (newLanguage: 'fr' | 'en') => {
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     setLanguage(newLanguage);
     localStorage.setItem('language', newLanguage);
   };
 
+<<<<<<< HEAD
   const handleSetTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
@@ -81,11 +110,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const formatPrice = (price: number) => {
     const convertedPrice=price*(rates[currency]||1);
     try{return new Intl.NumberFormat(language,{style:'currency',currency,maximumFractionDigits:currency==='XAF'?0:2}).format(convertedPrice);}catch{return `${convertedPrice.toFixed(2)} ${currency}`;}
+=======
+  const formatPrice = (price: number) => {
+    const rates = {
+      EURO: 1,
+      DOLLARS: 1.1,
+      FCFA: 655.957
+    };
+
+    const convertedPrice = price * rates[currency];
+    const symbols = {
+      EURO: '€',
+      DOLLARS: '$',
+      FCFA: ' FCFA'
+    };
+
+    if (currency === 'FCFA') {
+      return `${Math.round(convertedPrice)}${symbols[currency]}`;
+    }
+    return `${convertedPrice.toFixed(2)}${symbols[currency]}`;
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   };
 
   return (
     <AppContext.Provider value={{
       currency,
+<<<<<<< HEAD
       currencies,
       language,
       t: (key) => translate(language, key),
@@ -93,9 +143,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrency: handleSetCurrency,
       setLanguage: handleSetLanguage,
       setTheme: handleSetTheme,
+=======
+      language,
+      setCurrency: handleSetCurrency,
+      setLanguage: handleSetLanguage,
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       formatPrice
     }}>
       {children}
     </AppContext.Provider>
   );
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
