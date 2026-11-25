@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
 import { Settings as SettingsIcon, Globe, DollarSign, X, Users, Shield, QrCode, Moon } from 'lucide-react';
-=======
-import { Settings as SettingsIcon, Globe, DollarSign, X, Users, Shield, QrCode } from 'lucide-react';
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,10 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/contexts/AppContext';
-<<<<<<< HEAD
 import type { Language } from '@/lib/translations';
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 import { QRScanner } from './QRScanner';
 
 export const Settings = () => {
@@ -24,11 +17,7 @@ export const Settings = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [maxUsers, setMaxUsers] = useState('100');
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
-<<<<<<< HEAD
   const { currency, currencies, language, theme, setCurrency, setLanguage, setTheme, t:translateText } = useApp();
-=======
-  const { currency, language, setCurrency, setLanguage } = useApp();
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
@@ -46,13 +35,10 @@ export const Settings = () => {
       settings: 'Paramètres',
       language: 'Langue',
       currency: 'Devise',
-<<<<<<< HEAD
       theme: 'Thème',
       light: 'Clair',
       dark: 'Sombre',
       system: 'Selon l’appareil',
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       french: 'Français',
       english: 'English',
       close: 'Fermer',
@@ -66,13 +52,10 @@ export const Settings = () => {
       settings: 'Settings',
       language: 'Language',
       currency: 'Currency',
-<<<<<<< HEAD
       theme: 'Theme',
       light: 'Light',
       dark: 'Dark',
       system: 'Use device setting',
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       french: 'Français',
       english: 'English',
       close: 'Close',
@@ -84,12 +67,8 @@ export const Settings = () => {
     }
   };
 
-<<<<<<< HEAD
   const t = {...(texts[language as 'fr'|'en'] || texts.en),settings:translateText('settings.title'),language:translateText('settings.language'),currency:translateText('settings.currency'),theme:translateText('settings.theme'),close:translateText('settings.close')};
   const languageNames:Record<Language,string>={fr:'Français',en:'English',es:'Español',pt:'Português',de:'Deutsch',ar:'العربية',zh:'中文',sw:'Kiswahili'};
-=======
-  const t = texts[language];
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 
   const handleSaveAdminSettings = () => {
     localStorage.setItem('maxUsers', maxUsers);
@@ -99,11 +78,7 @@ export const Settings = () => {
   return (
     <>
       {/* Settings Button */}
-<<<<<<< HEAD
       <div className="fixed bottom-4 right-4 z-50">
-=======
-      <div className="fixed bottom-4 left-4 z-50">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
         <Button
           onClick={() => setIsOpen(true)}
           variant="hero"
@@ -116,13 +91,8 @@ export const Settings = () => {
 
       {/* Settings Modal */}
       {isOpen && (
-<<<<<<< HEAD
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center motion-safe:animate-fade-in">
           <Card className="motion-safe:animate-fade-up my-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md mx-3 overflow-y-auto border-border shadow-2xl sm:mx-4">
-=======
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <Card className="w-full max-w-md mx-4 border-border">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <SettingsIcon className="w-5 h-5" />
@@ -143,16 +113,11 @@ export const Settings = () => {
                   <Globe className="w-4 h-4 text-primary" />
                   <label className="text-sm font-medium">{t.language}</label>
                 </div>
-<<<<<<< HEAD
                 <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
-=======
-                <Select value={language} onValueChange={(value: 'fr' | 'en') => setLanguage(value)}>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-<<<<<<< HEAD
                     {Object.entries(languageNames).map(([code,name])=><SelectItem key={code} value={code}>{name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -169,10 +134,6 @@ export const Settings = () => {
                     <SelectItem value="light">{t.light}</SelectItem>
                     <SelectItem value="dark">{t.dark}</SelectItem>
                     <SelectItem value="system">{t.system}</SelectItem>
-=======
-                    <SelectItem value="fr">{t.french}</SelectItem>
-                    <SelectItem value="en">{t.english}</SelectItem>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                   </SelectContent>
                 </Select>
               </div>
@@ -182,7 +143,6 @@ export const Settings = () => {
                   <DollarSign className="w-4 h-4 text-primary" />
                   <label className="text-sm font-medium">{t.currency}</label>
                 </div>
-<<<<<<< HEAD
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger>
                     <SelectValue />
@@ -192,18 +152,6 @@ export const Settings = () => {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">Taux de référence en euros. Données indicatives, actualisées automatiquement.</p>
-=======
-                <Select value={currency} onValueChange={(value: 'FCFA' | 'EURO' | 'DOLLARS') => setCurrency(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EURO">Euro (€)</SelectItem>
-                    <SelectItem value="DOLLARS">Dollar ($)</SelectItem>
-                    <SelectItem value="FCFA">FCFA</SelectItem>
-                  </SelectContent>
-                </Select>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
               </div>
 
               {/* QR Scanner Button */}
@@ -281,8 +229,4 @@ export const Settings = () => {
       />
     </>
   );
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761

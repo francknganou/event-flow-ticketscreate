@@ -3,10 +3,7 @@ import { QrCode, X, User, Phone, Mail, Calendar, MapPin, Ticket } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-<<<<<<< HEAD
 import { Input } from '@/components/ui/input';
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 import QrScanner from 'qr-scanner';
 import { useApp } from '@/contexts/AppContext';
 
@@ -37,13 +34,10 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
   const [scannedData, setScannedData] = useState<TicketData | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
-<<<<<<< HEAD
   const [verdict, setVerdict] = useState<string>('');
   const [manualCode, setManualCode] = useState('');
   const [events, setEvents] = useState<{id:string;title:string}[]>([]);
   const [eventId, setEventId] = useState('');
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   const videoRef = useRef<HTMLVideoElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
 
@@ -61,11 +55,7 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
       bookingId: 'ID de réservation',
       close: 'Fermer',
       scanError: 'Erreur lors du scan',
-<<<<<<< HEAD
       invalidQR: 'QR Code invalide', manual: 'Saisir le code du billet', validate: 'Vérifier le billet', gate: 'Porte / événement',
-=======
-      invalidQR: 'QR Code invalide'
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     },
     en: {
       scanner: 'QR Code Scanner',
@@ -80,7 +70,6 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
       bookingId: 'Booking ID',
       close: 'Close',
       scanError: 'Scan Error',
-<<<<<<< HEAD
       invalidQR: 'Invalid QR Code', manual: 'Enter ticket code', validate: 'Validate ticket', gate: 'Gate / event',
     }
   };
@@ -89,15 +78,6 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
 
   useEffect(() => {
     if(isOpen) fetch('http://127.0.0.1:8000/api/events.php',{headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}}).then(r=>r.ok?r.json():[]).then((rows:any[])=>setEvents(rows.map(e=>({id:String(e.id),title:e.title})))).catch(()=>setEvents([]));
-=======
-      invalidQR: 'Invalid QR Code'
-    }
-  };
-
-  const t = texts[language];
-
-  useEffect(() => {
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     if (isOpen && isScanning && videoRef.current) {
       startScanner();
     }
@@ -138,43 +118,24 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
   };
 
   const handleScanResult = (data: string) => {
-<<<<<<< HEAD
     stopScanner();
     fetch('http://127.0.0.1:8000/api/scan.php',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({token:data,eventId:eventId||undefined})})
       .then(async response=>{const result=await response.json();if(!response.ok){setVerdict(result.verdict||'unknown');setError(result.error||t.invalidQR);return;}setVerdict('valid');setScannedData({...result,purchaseDate:new Date().toISOString()});setError('');})
       .catch(err=>{setVerdict('unknown');setError(err instanceof Error?err.message:t.invalidQR);});
-=======
-    try {
-      const parsedData = JSON.parse(data) as TicketData;
-      setScannedData(parsedData);
-      setError('');
-      stopScanner();
-    } catch (err) {
-      setError(t.invalidQR);
-    }
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   };
 
   const handleStartScan = () => {
     setIsScanning(true);
     setScannedData(null);
     setError('');
-<<<<<<< HEAD
     setVerdict('');
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   };
 
   if (!isOpen) return null;
 
   return (
-<<<<<<< HEAD
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto motion-safe:animate-fade-in">
       <Card className="motion-safe:animate-fade-up w-full max-w-2xl mx-4 my-8 border-border shadow-2xl">
-=======
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto">
-      <Card className="w-full max-w-2xl mx-4 my-8 border-border">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <QrCode className="w-5 h-5" />
@@ -200,12 +161,9 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
               <Button variant="hero" onClick={handleStartScan} className="w-full">
                 {t.startScan}
               </Button>
-<<<<<<< HEAD
               {events.length>0&&<label className="block text-left text-sm font-medium">{t.gate}<select className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" value={eventId} onChange={e=>setEventId(e.target.value)}><option value="">{language==='fr'?'Tous les événements accessibles':'All accessible events'}</option>{events.map(ev=><option key={ev.id} value={ev.id}>{ev.title}</option>)}</select></label>}
               <div className="flex gap-2"><Input aria-label={t.manual} placeholder={t.manual} value={manualCode} onChange={e=>setManualCode(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&manualCode.trim())handleScanResult(manualCode.trim());}}/><Button variant="outline" disabled={!manualCode.trim()} onClick={()=>handleScanResult(manualCode.trim())}>{t.validate}</Button></div>
               {error&&<div role="alert" className={`rounded-xl p-4 text-center text-sm font-semibold ${verdict==='other_event'?'border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300':'border border-destructive/30 bg-destructive/10 text-destructive'}`}><span className="mb-1 block uppercase tracking-wide">{verdict==='other_event'?'Autre événement':verdict==='forged'?'Falsifié':verdict==='used'?'Déjà utilisé':verdict==='cancelled'?'Annulé':verdict==='refunded'?'Remboursé':verdict==='expired'?'Expiré':'Inconnu'}</span>{error}</div>}
-=======
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
             </div>
           )}
 
@@ -221,31 +179,19 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
                 {t.stopScan}
               </Button>
               {error && (
-<<<<<<< HEAD
                 <div role="alert" className={`rounded-xl p-4 text-center text-sm font-semibold ${verdict==='other_event'?'border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300':'border border-destructive/30 bg-destructive/10 text-destructive'}`}>{verdict&&<span className="mb-1 block uppercase tracking-wide">{verdict==='other_event'?'Autre événement':verdict==='forged'?'Falsifié':verdict==='used'?'Déjà utilisé':verdict==='cancelled'?'Annulé':verdict==='refunded'?'Remboursé':verdict==='expired'?'Expiré':'Inconnu'}</span>}{error}</div>
-=======
-                <div className="text-destructive text-sm text-center">{error}</div>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
               )}
             </div>
           )}
 
           {scannedData && (
             <div className="space-y-6">
-<<<<<<< HEAD
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
                 <h3 className="font-semibold text-emerald-700 dark:text-emerald-300 text-lg mb-2">{t.ticketInfo} · Entrée validée</h3>
                 <Badge variant="secondary" className="mb-4">
                   {t.bookingId}: {scannedData.bookingId}
                 </Badge>
                 <p className="text-sm font-medium">Zone / catégorie : {(scannedData as any).zone || (scannedData as any).ticketType || 'Standard'}</p>
-=======
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                <h3 className="font-semibold text-primary text-lg mb-2">{t.ticketInfo}</h3>
-                <Badge variant="secondary" className="mb-4">
-                  {t.bookingId}: {scannedData.bookingId}
-                </Badge>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -332,8 +278,4 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
       </Card>
     </div>
   );
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761

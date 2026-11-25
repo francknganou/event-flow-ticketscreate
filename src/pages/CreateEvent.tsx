@@ -1,28 +1,16 @@
-<<<<<<< HEAD
 
-=======
-import { Header } from "@/components/Header";
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-<<<<<<< HEAD
 import { Calendar, MapPin, Users, Plus, Trash2, ImagePlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Event, TicketType } from "@/data/events";
 
 
-=======
-import { Calendar, MapPin, Users, Euro, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Event, TicketType } from "@/data/events";
-
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
 const CreateEvent = () => {
   const [formData, setFormData] = useState({
     title: "",
@@ -32,17 +20,12 @@ const CreateEvent = () => {
     location: "",
     category: "",
     capacity: "",
-<<<<<<< HEAD
-=======
-    price: "",
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     image: ""
   });
   
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
     { id: "1", name: "Standard", price: 0, quantity: 0, availableQuantity: 0 }
   ]);
-<<<<<<< HEAD
   const [imageFile,setImageFile]=useState<File|null>(null);
   const [imagePreview,setImagePreview]=useState("");
   const [saving,setSaving]=useState(false);
@@ -57,14 +40,6 @@ const CreateEvent = () => {
     try {
     let eventImage=formData.image;
     if(imageFile){const upload=new FormData();upload.append('image',imageFile);const response=await fetch('http://127.0.0.1:8000/api/events.php?action=upload-image',{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:upload});const result=await response.json();if(!response.ok)throw new Error(result.error||'Import de l’image impossible.');eventImage=result.image;}
-=======
-  
-  const navigate = useNavigate();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     const newEvent: Event = {
       id: Date.now().toString(),
       title: formData.title,
@@ -73,30 +48,15 @@ const CreateEvent = () => {
       location: formData.location,
       category: formData.category,
       capacity: parseInt(formData.capacity),
-<<<<<<< HEAD
       price: Math.min(...ticketTypes.map(ticket => Number(ticket.price) || 0)),
       availableTickets: parseInt(formData.capacity),
       image: eventImage || "https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=400&h=300&fit=crop",
-=======
-      price: parseFloat(formData.price),
-      availableTickets: parseInt(formData.capacity),
-      image: "https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=400&h=300&fit=crop",
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       ticketTypes: ticketTypes,
       createdBy: "current-user"
     };
 
-<<<<<<< HEAD
     const response=await fetch('http://127.0.0.1:8000/api/events.php',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('sessionToken') || ''}`},body:JSON.stringify(newEvent)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Enregistrement impossible');navigate('/events');
     }catch(error){alert(error instanceof Error?error.message:'Création impossible.');}finally{setSaving(false);}
-=======
-    // Sauvegarder l'événement dans le localStorage
-    const existingEvents = JSON.parse(localStorage.getItem('userEvents') || '[]');
-    const updatedEvents = [...existingEvents, newEvent];
-    localStorage.setItem('userEvents', JSON.stringify(updatedEvents));
-    
-    navigate('/events');
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -126,11 +86,7 @@ const CreateEvent = () => {
       ticket.id === id 
         ? { 
             ...ticket, 
-<<<<<<< HEAD
           [field]: field === 'name' || field === 'description' ? value : typeof value === 'string' ? parseFloat(value) || 0 : value,
-=======
-            [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
             ...(field === 'quantity' ? { availableQuantity: typeof value === 'string' ? parseFloat(value) || 0 : value } : {})
           }
         : ticket
@@ -138,17 +94,10 @@ const CreateEvent = () => {
   };
 
   return (
-<<<<<<< HEAD
     <div className="min-h-screen bg-transparent">
       
       
       <div className="container mx-auto px-4 py-8"><main className="mx-auto max-w-3xl">
-=======
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">Créer un événement</h1>
@@ -248,13 +197,8 @@ const CreateEvent = () => {
                   </div>
                 </div>
 
-<<<<<<< HEAD
                 {/* Capacity */}
                 <div className="grid grid-cols-1 gap-4">
-=======
-                {/* Capacity & Price */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                   <div className="space-y-2">
                     <Label htmlFor="capacity">Capacité *</Label>
                     <div className="relative">
@@ -272,36 +216,12 @@ const CreateEvent = () => {
                     </div>
                   </div>
 
-<<<<<<< HEAD
-=======
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Prix du ticket (€) *</Label>
-                    <div className="relative">
-                      <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        id="price"
-                        type="number"
-                        value={formData.price}
-                        onChange={(e) => handleInputChange("price", e.target.value)}
-                        placeholder="0.00"
-                        className="pl-10"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </div>
-                  </div>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                 </div>
 
                 {/* Ticket Types */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-<<<<<<< HEAD
                     <div><Label>Types de tickets</Label><p className="mt-1 text-xs text-muted-foreground">La somme des quantités doit correspondre à la capacité de l’événement.</p></div>
-=======
-                    <Label>Types de tickets</Label>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                     <Button type="button" variant="outline" size="sm" onClick={addTicketType}>
                       <Plus className="w-4 h-4 mr-2" />
                       Ajouter un type
@@ -313,7 +233,6 @@ const CreateEvent = () => {
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <Label>Nom du ticket</Label>
-<<<<<<< HEAD
                           <Input
                             list="eventflow-ticket-type-suggestions"
                             value={ticket.name}
@@ -325,26 +244,6 @@ const CreateEvent = () => {
                           <datalist id="eventflow-ticket-type-suggestions">
                             {["Standard", "VIP", "Gratuit", "Étudiant", "Groupe", "Enfant", "Senior", "Membre"].map(name=><option key={name} value={name}/>) }
                           </datalist>
-=======
-                          <Select 
-                            value={ticket.name} 
-                            onValueChange={(value) => updateTicketType(ticket.id, "name", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un type de ticket" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Gratuit">Gratuit</SelectItem>
-                              <SelectItem value="Standard">Standard</SelectItem>
-                              <SelectItem value="VIP">VIP</SelectItem>
-                              <SelectItem value="Étudiant">Étudiant</SelectItem>
-                              <SelectItem value="Groupe">Groupe</SelectItem>
-                              <SelectItem value="Enfant">Enfant</SelectItem>
-                              <SelectItem value="Senior">Senior</SelectItem>
-                              <SelectItem value="Membre">Membre</SelectItem>
-                            </SelectContent>
-                          </Select>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                         </div>
                         
                         <div className="space-y-2">
@@ -392,7 +291,6 @@ const CreateEvent = () => {
 
                 {/* Image */}
                 <div className="space-y-2">
-<<<<<<< HEAD
                   <Label htmlFor="image-file">Image de l'événement</Label>
                   <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4">
                     <label htmlFor="image-file" className="flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl px-4 py-5 text-center transition-colors hover:bg-muted/50">
@@ -411,29 +309,12 @@ const CreateEvent = () => {
                       onChange={(e) => handleInputChange("image", e.target.value)}
                       placeholder="https://exemple.com/image.jpg"
                     />
-=======
-                  <Label htmlFor="image">Image de l'événement</Label>
-                  <Input
-                    id="image"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleInputChange("image", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Formats acceptés: JPG, PNG, GIF (max 5MB)
-                  </p>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                 </div>
 
                 {/* Submit */}
                 <div className="flex gap-4 pt-6">
-<<<<<<< HEAD
                   <Button type="submit" variant="hero" className="flex-1" disabled={saving}>
                     {saving?"Enregistrement…":"Créer l'événement"}
-=======
-                  <Button type="submit" variant="hero" className="flex-1">
-                    Créer l'événement
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
                   </Button>
                   <Button type="button" variant="outline" onClick={() => navigate('/dashboard')}>
                     Annuler
@@ -443,17 +324,9 @@ const CreateEvent = () => {
             </CardContent>
           </Card>
         </div>
-<<<<<<< HEAD
       </main></div>
-=======
-      </div>
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
     </div>
   );
 };
 
-<<<<<<< HEAD
 export default CreateEvent;
-=======
-export default CreateEvent;
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761

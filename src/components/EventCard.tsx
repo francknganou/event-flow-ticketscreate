@@ -49,17 +49,10 @@ export const EventCard = (props: EventCardProps) => {
   };
 
   const handleDeleteEvent = () => {
-<<<<<<< HEAD
     if (!window.confirm(`Supprimer l’événement « ${title} » ? Cette action est définitive.`)) return;
     fetch(`http://127.0.0.1:8000/api/events.php?id=${encodeURIComponent(props.id)}`,{method:'DELETE',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}})
       .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.error||'Suppression impossible');window.location.reload();})
       .catch(error=>window.alert(error instanceof Error?error.message:'Service indisponible.'));
-=======
-    const userEvents = JSON.parse(localStorage.getItem('userEvents') || '[]');
-    const updatedEvents = userEvents.filter((event: Event) => event.id !== props.id);
-    localStorage.setItem('userEvents', JSON.stringify(updatedEvents));
-    window.location.reload();
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
   };
 
   const texts = {
@@ -67,26 +60,15 @@ export const EventCard = (props: EventCardProps) => {
     en: { reserve: 'Book', full: 'Sold Out' }
   };
 
-<<<<<<< HEAD
   const t = (texts as any)[language] || texts.en;
 
   return (
     <Card className="group overflow-hidden bg-card border-border shadow-card transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
-=======
-  const t = texts[language];
-
-  return (
-    <Card className="group overflow-hidden bg-card border-border hover:shadow-glow transition-all duration-300 hover:scale-[1.02]">
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
       <div className="relative">
         <img 
           src={image} 
           alt={title}
-<<<<<<< HEAD
           className="w-full h-48 object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-=======
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
         />
         <div className="absolute top-3 left-3 bg-primary/90 backdrop-blur-sm px-2 py-1 rounded-md">
           <span className="text-xs font-medium text-primary-foreground">{category}</span>
@@ -151,8 +133,4 @@ export const EventCard = (props: EventCardProps) => {
       </CardContent>
     </Card>
   );
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 4179d2893d945ac75accb60e9214b13a6bfa6761
