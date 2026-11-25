@@ -24,7 +24,7 @@ export const BookingModal = ({event,isOpen,onClose}:BookingModalProps) => {
   const submit=async()=>{
     setBusy(true);
     try {
-      const response=await fetch('http://127.0.0.1:8000/api/bookings.php',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({eventId:event.id,user:{phone},tickets:selected})});
+      const response=await fetch('/api/bookings.php',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({eventId:event.id,user:{phone},tickets:selected})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||'Réservation impossible');setBookingId(result.id);setPending(result.status==='pending_payment');setExpiresAt(result.expiresAt||'');
       const images=await Promise.all((result.ticketCodes||[]).map(async(code:string)=>({code,image:await QRCode.toDataURL(code,{width:300,margin:1,color:{dark:'#17132b',light:'#ffffff'}})})));setPasses(images);
       toast({title:result.status==='confirmed'?'Réservation confirmée':'Places réservées temporairement',description:result.status==='confirmed'?'Vos billets sécurisés sont prêts.':'La réservation attend un paiement confirmé.'});

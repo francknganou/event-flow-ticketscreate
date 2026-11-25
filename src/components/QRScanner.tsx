@@ -77,7 +77,7 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
   const t = (texts as any)[language] || texts.en;
 
   useEffect(() => {
-    if(isOpen) fetch('http://127.0.0.1:8000/api/events.php',{headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}}).then(r=>r.ok?r.json():[]).then((rows:any[])=>setEvents(rows.map(e=>({id:String(e.id),title:e.title})))).catch(()=>setEvents([]));
+    if(isOpen) fetch('/api/events.php',{headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}}).then(r=>r.ok?r.json():[]).then((rows:any[])=>setEvents(rows.map(e=>({id:String(e.id),title:e.title})))).catch(()=>setEvents([]));
     if (isOpen && isScanning && videoRef.current) {
       startScanner();
     }
@@ -119,7 +119,7 @@ export const QRScanner = ({ isOpen, onClose }: QRScannerProps) => {
 
   const handleScanResult = (data: string) => {
     stopScanner();
-    fetch('http://127.0.0.1:8000/api/scan.php',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({token:data,eventId:eventId||undefined})})
+    fetch('/api/scan.php',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({token:data,eventId:eventId||undefined})})
       .then(async response=>{const result=await response.json();if(!response.ok){setVerdict(result.verdict||'unknown');setError(result.error||t.invalidQR);return;}setVerdict('valid');setScannedData({...result,purchaseDate:new Date().toISOString()});setError('');})
       .catch(err=>{setVerdict('unknown');setError(err instanceof Error?err.message:t.invalidQR);});
   };

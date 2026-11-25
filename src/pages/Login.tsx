@@ -17,7 +17,7 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth.php', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+      const response = await fetch('/api/auth.php', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
       const user = await response.json();
       if (!response.ok) throw new Error(user.error || 'Connexion impossible');
       localStorage.setItem('isLoggedIn','true'); localStorage.setItem('userRole',user.role); localStorage.setItem('userEmail',user.email); localStorage.setItem('sessionToken',user.token); localStorage.setItem('userFirstName',user.first_name); localStorage.setItem('userLastName',user.last_name);

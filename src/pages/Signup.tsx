@@ -36,7 +36,7 @@ const Signup = () => {
     }
     if (formData.password !== formData.confirmPassword) { toast.error('Les mots de passe ne correspondent pas.'); return; }
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth.php?action=signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(formData)});
+      const response = await fetch('/api/auth.php?action=signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(formData)});
       const user=await response.json(); if(!response.ok) throw new Error(user.error || 'Inscription impossible');
       localStorage.setItem('isLoggedIn','true');localStorage.setItem('userRole',user.role);localStorage.setItem('userEmail',user.email);localStorage.setItem('sessionToken',user.token);localStorage.setItem('userFirstName',formData.firstName);localStorage.setItem('userLastName',formData.lastName);navigate('/events');
     } catch(error) { toast.error(error instanceof Error ? error.message : 'API indisponible.'); }

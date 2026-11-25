@@ -15,9 +15,9 @@ type DashboardData = { role:string; stats: { events:number;sold:number;revenue:n
 const Dashboard = () => {
   const [data,setData]=useState<DashboardData|null>(null); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [scannerOpen,setScannerOpen]=useState(false);
   const {formatPrice,t,language}=useApp();
-  const load=()=>fetch('http://127.0.0.1:8000/api/dashboard.php',{headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error||'Accès refusé');setData(d);}).catch(e=>setError(e.message)).finally(()=>setLoading(false));
+  const load=()=>fetch('/api/dashboard.php',{headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error||'Accès refusé');setData(d);}).catch(e=>setError(e.message)).finally(()=>setLoading(false));
   useEffect(()=>{void load();},[]);
-  const reviewOrganizer=async(requestId:string,decision:'approve'|'reject')=>{try{const r=await fetch('http://127.0.0.1:8000/api/organizers.php?action=review',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({requestId,decision})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Décision impossible');await load();}catch(e){setError(e instanceof Error?e.message:'Décision impossible');}};
+  const reviewOrganizer=async(requestId:string,decision:'approve'|'reject')=>{try{const r=await fetch('/api/organizers.php?action=review',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:JSON.stringify({requestId,decision})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Décision impossible');await load();}catch(e){setError(e instanceof Error?e.message:'Décision impossible');}};
   const now = useMemo(()=>new Date(),[]);
   const statCards = data ? [
     {label:t('dashboard.count'),value:data.stats.events.toLocaleString(language==='fr'?'fr-FR':'en-US'),note:language==='fr'?'Dans votre espace':'In your workspace',icon:CalendarDays,color:'text-violet-600',bg:'bg-violet-500/10'},

@@ -8,7 +8,7 @@ export const Header = () => {
   const [isLoggedIn,setIsLoggedIn]=useState(false);const [userRole,setUserRole]=useState("");const [mobileOpen,setMobileOpen]=useState(false);
   const navigate=useNavigate();const location=useLocation();const {t}=useApp();
   useEffect(()=>{setIsLoggedIn(localStorage.getItem("isLoggedIn")==="true");setUserRole(localStorage.getItem("userRole")||"");setMobileOpen(false);},[location.pathname]);
-  const handleLogout=async()=>{try{await fetch("http://127.0.0.1:8000/api/auth.php?action=logout",{method:"POST",headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}});}catch{/* Clear the local session even if the API is offline. */} ["isLoggedIn","userRole","userEmail","sessionToken","userFirstName","userLastName"].forEach(k=>localStorage.removeItem(k));setIsLoggedIn(false);setUserRole("");navigate("/");};
+  const handleLogout=async()=>{try{await fetch("/api/auth.php?action=logout",{method:"POST",headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}});}catch{/* Clear the local session even if the API is offline. */} ["isLoggedIn","userRole","userEmail","sessionToken","userFirstName","userLastName"].forEach(k=>localStorage.removeItem(k));setIsLoggedIn(false);setUserRole("");navigate("/");};
   const showBack=location.pathname!=="/";
   const linkClass="rounded-lg px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white";
   const accountActions=<>

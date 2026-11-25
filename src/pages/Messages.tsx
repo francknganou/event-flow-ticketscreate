@@ -8,7 +8,7 @@ import { useApp } from '@/contexts/AppContext';
 
 type Contact={id:number;first_name:string;last_name:string;email:string;role:string;unread:number};
 type MessageItem={id:string;sender_id:number;recipient_id:number;related_event_id:string|null;body:string;created_at:string;event_title?:string};
-const endpoint='http://127.0.0.1:8000/api/dashboard.php?action=messages';
+const endpoint='/api/dashboard.php?action=messages';
 export default function Messages(){
  const {language}=useApp();const fr=language==='fr';const token=localStorage.getItem('sessionToken')||'';const [contacts,setContacts]=useState<Contact[]>([]);const [messages,setMessages]=useState<MessageItem[]>([]);const [userId,setUserId]=useState(0);const [selected,setSelected]=useState<Contact|null>(null);const [draft,setDraft]=useState('');const [loading,setLoading]=useState(true);const [sending,setSending]=useState(false);const [error,setError]=useState('');const [notice,setNotice]=useState('');const bottom=useRef<HTMLDivElement>(null);
  const loadContacts=async()=>{const r=await fetch(endpoint,{headers:{Authorization:`Bearer ${token}`}});const d=await r.json();if(!r.ok)throw Error(d.error||'Chargement impossible');setContacts(d.contacts||[]);setUserId(Number(d.userId));setSelected(old=>old?((d.contacts||[]).find((c:Contact)=>c.id===old.id)||old):((d.contacts||[])[0]||null));};

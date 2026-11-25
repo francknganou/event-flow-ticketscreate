@@ -10,7 +10,7 @@ import { useApp } from "@/contexts/AppContext";
 const Index = () => {
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
   const {t,language}=useApp();
-  useEffect(() => { fetch('http://127.0.0.1:8000/api/events.php').then(r=>r.json()).then((events: Event[])=>setFeaturedEvents(events.slice(0,6))).catch(()=>setFeaturedEvents([])); }, []);
+  useEffect(() => { fetch('/api/events.php').then(r=>r.json()).then((events: Event[])=>setFeaturedEvents(events.slice(0,6))).catch(()=>setFeaturedEvents([])); }, []);
   
   return (
     <div className="min-h-screen bg-transparent">

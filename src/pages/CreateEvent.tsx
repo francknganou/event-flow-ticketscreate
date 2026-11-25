@@ -39,7 +39,7 @@ const CreateEvent = () => {
     setSaving(true);
     try {
     let eventImage=formData.image;
-    if(imageFile){const upload=new FormData();upload.append('image',imageFile);const response=await fetch('http://127.0.0.1:8000/api/events.php?action=upload-image',{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:upload});const result=await response.json();if(!response.ok)throw new Error(result.error||'Import de l’image impossible.');eventImage=result.image;}
+    if(imageFile){const upload=new FormData();upload.append('image',imageFile);const response=await fetch('/api/events.php?action=upload-image',{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`},body:upload});const result=await response.json();if(!response.ok)throw new Error(result.error||'Import de l’image impossible.');eventImage=result.image;}
     const newEvent: Event = {
       id: Date.now().toString(),
       title: formData.title,
@@ -55,7 +55,7 @@ const CreateEvent = () => {
       createdBy: "current-user"
     };
 
-    const response=await fetch('http://127.0.0.1:8000/api/events.php',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('sessionToken') || ''}`},body:JSON.stringify(newEvent)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Enregistrement impossible');navigate('/events');
+    const response=await fetch('/api/events.php',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('sessionToken') || ''}`},body:JSON.stringify(newEvent)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Enregistrement impossible');navigate('/events');
     }catch(error){alert(error instanceof Error?error.message:'Création impossible.');}finally{setSaving(false);}
   };
 

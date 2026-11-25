@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS EventFlow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE EventFlow;
+CREATE DATABASE IF NOT EXISTS eventflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE eventflow;
 CREATE TABLE IF NOT EXISTS users(id INT AUTO_INCREMENT PRIMARY KEY,first_name VARCHAR(100) NOT NULL,last_name VARCHAR(100) NOT NULL,email VARCHAR(190) NOT NULL UNIQUE,password_hash VARCHAR(255) NOT NULL,phone VARCHAR(30) NULL,role VARCHAR(30) NOT NULL DEFAULT 'user',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 INSERT IGNORE INTO users(first_name,last_name,email,password_hash,role) VALUES('Franck','Nganou','franck06.nganou02oumbe2004@gmail.com','$2y$10$7TFlxYzz0JpeA69946TPaeeGOnqIbRLHBskRFyj.CFIFhoKCMP/lO','admin');
 CREATE TABLE IF NOT EXISTS events(id BIGINT AUTO_INCREMENT PRIMARY KEY,organizer_id INT NOT NULL,title VARCHAR(200) NOT NULL,event_date DATETIME NOT NULL,end_date DATETIME NULL,location VARCHAR(255) NOT NULL,price DECIMAL(10,2) NOT NULL,image TEXT,capacity INT NOT NULL,available_tickets INT NOT NULL,category VARCHAR(80) NOT NULL,description TEXT NOT NULL,created_by VARCHAR(190) NOT NULL,status ENUM('draft','published','ongoing','completed','cancelled') NOT NULL DEFAULT 'draft',visibility ENUM('public','private') NOT NULL DEFAULT 'public',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(organizer_id) REFERENCES users(id));

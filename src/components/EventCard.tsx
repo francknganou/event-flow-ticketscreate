@@ -50,7 +50,7 @@ export const EventCard = (props: EventCardProps) => {
 
   const handleDeleteEvent = () => {
     if (!window.confirm(`Supprimer l’événement « ${title} » ? Cette action est définitive.`)) return;
-    fetch(`http://127.0.0.1:8000/api/events.php?id=${encodeURIComponent(props.id)}`,{method:'DELETE',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}})
+    fetch(`/api/events.php?id=${encodeURIComponent(props.id)}`,{method:'DELETE',headers:{Authorization:`Bearer ${localStorage.getItem('sessionToken')||''}`}})
       .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.error||'Suppression impossible');window.location.reload();})
       .catch(error=>window.alert(error instanceof Error?error.message:'Service indisponible.'));
   };

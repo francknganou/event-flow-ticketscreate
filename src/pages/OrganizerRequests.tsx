@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 type Request={id:string;organization_name:string;phone:string;status:"pending"|"approved"|"rejected";created_at:string;first_name:string;last_name:string;email:string};
-const endpoint="http://127.0.0.1:8000/api/organizers.php";
+const endpoint="/api/organizers.php";
 const OrganizerRequests=()=>{
   const navigate=useNavigate();const [requests,setRequests]=useState<Request[]>([]);const [query,setQuery]=useState("");const [loading,setLoading]=useState(true);const [error,setError]=useState("");const [busy,setBusy]=useState<string|null>(null);
   const load=useCallback(async()=>{setLoading(true);try{const r=await fetch(endpoint,{headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Chargement impossible");setRequests(d as Request[]);}catch(e){setError(e instanceof Error?e.message:"Chargement impossible");}finally{setLoading(false);}},[]);

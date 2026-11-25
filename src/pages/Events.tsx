@@ -17,7 +17,7 @@ const Events = () => {
   const [allEvents,setAllEvents]=useState<Event[]>([]);
   const {t,language}=useApp();
 
-  useEffect(()=>{fetch('http://127.0.0.1:8000/api/events.php').then(r=>r.json()).then(setAllEvents).catch(()=>setAllEvents([]));},[]);
+  useEffect(()=>{fetch('/api/events.php').then(r=>r.json()).then(setAllEvents).catch(()=>setAllEvents([]));},[]);
 
   const categories=useMemo(()=>[...new Set(allEvents.map(event=>event.category).filter(Boolean))],[allEvents]);
   const filteredEvents=useMemo(()=>{

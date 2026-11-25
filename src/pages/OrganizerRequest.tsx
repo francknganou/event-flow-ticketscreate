@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 
-const api = "http://127.0.0.1:8000/api/organizers.php";
+const api = "/api/organizers.php";
 const OrganizerRequest = () => {
   const [status,setStatus]=useState("loading"); const [name,setName]=useState(""); const [phone,setPhone]=useState(""); const [error,setError]=useState(""); const [busy,setBusy]=useState(false);
   const headers={Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`};

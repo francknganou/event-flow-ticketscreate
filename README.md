@@ -5,12 +5,20 @@ Application de billetterie React, PHP et MySQL conçue pour un lancement local a
 ## Démarrage local
 
 1. Démarrer MySQL dans WampServer.
-2. Pour une nouvelle installation, importer `database/schema.sql` dans phpMyAdmin ou MySQL. La base EventFlow de cette installation a déjà été migrée.
+2. Pour une nouvelle installation, importer `database/schema.sql` dans phpMyAdmin ou MySQL. La base `eventflow` de cette installation a déjà été migrée.
 4. Installer les dépendances une première fois avec `npm ci`.
 5. Dans un terminal, depuis ce dossier, démarrer l’API : `C:\wamp64\bin\php\php8.3.14\php.exe -S 127.0.0.1:8000`.
 6. Dans un second terminal, lancer le site avec `npm run dev` puis ouvrir `http://localhost:8080`.
 
-La configuration locale attend MySQL sur `127.0.0.1`, base `EventFlow`, utilisateur `root` sans mot de passe (valeurs WampServer par défaut). Les comptes participants se créent depuis Inscription. Le compte administrateur local est `franck06.nganou02oumbe2004@gmail.com` ; son mot de passe a été remplacé comme demandé.
+La configuration locale attend MySQL sur `127.0.0.1`, base `eventflow`, utilisateur `root` sans mot de passe (valeurs WampServer par défaut). Les comptes participants se créent depuis Inscription. Le compte administrateur local est `franck06.nganou02oumbe2004@gmail.com` ; son mot de passe a été remplacé comme demandé.
+
+## Déploiement Cloudflare Workers
+
+- Le dépôt utilise `package-lock.json` comme verrou npm. Le verrou Bun obsolète a été retiré pour éviter l’échec de dépendances sur Workers Builds.
+- Le Worker `eventflow-tickets` publie les fichiers produits dans `dist/` et renvoie `index.html` pour les routes de l’application.
+- Build command : `npm run build`. Deploy command : `npx wrangler deploy`. Répertoire racine : `/`.
+- En local, Vite relaie `/api/*` vers l’API PHP de WampServer. En production, définir la variable Worker `API_ORIGIN` vers l’URL HTTPS publique de l’API, terminant par `/api/` (ex. `https://api.example.com/api/`).
+- Sans une API PHP publique reliée à MySQL, les écrans et fichiers du site sont publiés, mais les connexions, réservations, billets et tableaux de bord ne peuvent pas accéder aux données.
 
 ## Capacités présentes
 

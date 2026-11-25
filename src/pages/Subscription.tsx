@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 
 type Plan={id:string;name:string;monthlyPrice:number;annualPrice:number;maxEvents:number|null;maxTicketsPerEvent:number|null;maxTicketTypes:number|null;maxControllers:number|null;commission:number;features:string[]};
-const api="http://127.0.0.1:8000/api/";
+const api="/api/";
 export default function Subscription(){
  const {language}=useApp();const en=language==="en";const [plans,setPlans]=useState<Plan[]>([]);const [current,setCurrent]=useState<any>(null);const [subs,setSubs]=useState<any[]>([]);const [stats,setStats]=useState<any>(null);const [adjustments,setAdjustments]=useState<Record<number,{type:string;value:string;reason:string}>>({});const [period,setPeriod]=useState<"monthly"|"annual">("monthly");const [busy,setBusy]=useState("");const [message,setMessage]=useState("");const [error,setError]=useState("");const role=localStorage.getItem("userRole");const token=localStorage.getItem("sessionToken")||"";
  const load=async()=>{const p=await fetch(api+"subscription.php?plans=1");const pd=await p.json();if(!p.ok)throw Error(pd.error||"Loading failed");setPlans(pd);if(!token||!['organizer','admin'].includes(role||''))return;const s=await fetch(api+"subscription.php",{headers:{Authorization:`Bearer ${token}`}});const sd=await s.json();if(!s.ok)throw Error(sd.error||"Loading failed");setCurrent(sd.subscription);if(role==="admin"){const a=await fetch(api+"subscription.php?admin=1",{headers:{Authorization:`Bearer ${token}`}});const ad=await a.json();if(a.ok){setSubs(ad.subscriptions);setStats(ad.stats);}}};
