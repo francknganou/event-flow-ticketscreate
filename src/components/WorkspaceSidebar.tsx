@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Activity, CalendarDays, Compass, Menu, Plus, QrCode, Ticket, UserRound, X, CreditCard, MessageCircle } from "lucide-react";
+import { Activity, CalendarDays, Compass, Plus, QrCode, Ticket, UserRound, CreditCard, MessageCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/contexts/AppContext";
@@ -33,37 +32,27 @@ const items: {key:TranslationKey;to:string;icon:LucideIcon;roles:string[]}[] = [
 export const WorkspaceSidebar = () => {
   const { pathname } = useLocation();
   const { t } = useApp();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const role = localStorage.getItem("isLoggedIn") === "true" ? localStorage.getItem("userRole") || "user" : "visitor";
   const visibleItems = items.filter((item) => item.roles.includes(role));
   const roleKey = role === "admin" ? "sidebar.admin" : role === "organizer" ? "sidebar.organizer" : role === "staff" ? "sidebar.staff" : role === "visitor" ? "sidebar.visitor" : "sidebar.participant";
   const roleLabel=t(roleKey);
-  const nav = (mobile = false) => <nav aria-label={`Menu ${roleLabel}`} className="space-y-1">
+  const nav = (mobile = false) => <nav aria-label={`Menu ${roleLabel}`} className={mobile ? "flex w-max min-w-full gap-2" : "space-y-1"}>
     {visibleItems.map(({ key, to, icon: Icon }) => {
       const active = pathname === to.split("#")[0] && (!to.includes("#") || window.location.hash === `#${to.split("#")[1]}`);
-      return <Link key={to} to={to} onClick={() => mobile && setMobileOpen(false)} aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-violet-100 text-violet-950 dark:bg-violet-950/50 dark:text-violet-100" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+      return <Link key={`${key}-${to}`} to={to} aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${mobile ? "shrink-0 border border-white/10 bg-black/35 text-white/80 hover:bg-white/10 hover:text-white" : ""} ${active ? "bg-violet-100 text-violet-950 dark:bg-violet-950/50 dark:text-violet-100" : mobile ? "" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
         <Icon className="h-4 w-4 shrink-0"/><span>{t(key)}</span>
       </Link>;
     })}
   </nav>;
   return <>
-    <div className="mb-3 flex w-full items-center justify-between px-4 pt-3 lg:hidden">
-      <span className="text-sm font-semibold text-muted-foreground">{t("sidebar.navigation")}</span>
-      <Button variant="outline" size="sm" aria-expanded={mobileOpen} aria-controls="workspace-mobile-nav" onClick={() => setMobileOpen((open) => !open)}>
-        {mobileOpen ? <X className="mr-2 h-4 w-4"/> : <Menu className="mr-2 h-4 w-4"/>}{mobileOpen ? t("nav.close") : t("sidebar.open")}
-      </Button>
+    <div className="sticky top-16 z-40 w-full overflow-x-auto border-b border-white/10 bg-black px-4 py-2 lg:hidden">
+      <span className="sr-only">{t("sidebar.navigation")}</span>{nav(true)}
     </div>
     <aside className="sticky top-24 hidden h-[calc(100vh-7rem)] w-60 shrink-0 flex-col border-r border-white/10 bg-black py-5 pr-4 text-white lg:flex">
       <div className="mb-5 px-3"><p className="text-xs font-semibold uppercase tracking-[.16em] text-white/55">Menu {roleLabel}</p><p className="mt-1 text-sm font-semibold">{t("sidebar.workspace")}</p></div>
       {nav()}
       <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-sm font-semibold">EventFlow</p><p className="mt-1 text-xs leading-relaxed text-white/60">{t("sidebar.footer")}</p></div>
     </aside>
-    {mobileOpen && <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] motion-safe:animate-fade-in lg:hidden" onClick={() => setMobileOpen(false)}>
-      <aside id="workspace-mobile-nav" className="h-full w-[min(19rem,85vw)] bg-black p-5 text-white shadow-2xl motion-safe:animate-slide-in-left" onClick={(event) => event.stopPropagation()}>
-        <div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-white/55">Menu {roleLabel}</p><p className="mt-1 font-semibold">{t("sidebar.workspace")}</p></div><Button variant="ghost" size="icon" aria-label={t("nav.close")} className="text-white hover:bg-white/10 hover:text-white" onClick={() => setMobileOpen(false)}><X className="h-5 w-5"/></Button></div>
-        {nav(true)}
-      </aside>
-    </div>}
   </>;
 };

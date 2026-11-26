@@ -10,9 +10,15 @@ export const Header = () => {
   useEffect(()=>{setIsLoggedIn(localStorage.getItem("isLoggedIn")==="true");setUserRole(localStorage.getItem("userRole")||"");setMobileOpen(false);},[location.pathname]);
   const handleLogout=async()=>{try{await fetch("/api/auth.php?action=logout",{method:"POST",headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}});}catch{/* Clear the local session even if the API is offline. */} ["isLoggedIn","userRole","userEmail","sessionToken","userFirstName","userLastName"].forEach(k=>localStorage.removeItem(k));setIsLoggedIn(false);setUserRole("");navigate("/");};
   const showBack=location.pathname!=="/";
+  const handleBack=()=>{
+    // `navigate(-1)` is a no-op (or can leave the app) when a page was opened
+    // directly. Use the router history only when it contains an in-app entry.
+    if(typeof window!=='undefined'&&Number(window.history.state?.idx)>0) navigate(-1);
+    else navigate('/');
+  };
   const linkClass="rounded-lg px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white";
   const accountActions=<>
-    {showBack&&<Button variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white" onClick={()=>navigate(-1)}><ArrowLeft className="mr-2 h-4 w-4"/>{t("nav.back")}</Button>}
+    {showBack&&<Button variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4"/>{t("nav.back")}</Button>}
     {isLoggedIn?<>
       {(["admin","organizer"].includes(userRole))&&<Link to="/dashboard" className={linkClass}><User className="mr-2 inline h-4 w-4"/>{t("nav.dashboard")}</Link>}
       {(["admin","organizer","staff"].includes(userRole))&&<Link to="/scanner" className={linkClass}><QrCode className="mr-2 inline h-4 w-4"/>{t("nav.scanner")}</Link>}
@@ -25,6 +31,7 @@ export const Header = () => {
       <Link to="/" className="flex min-w-0 shrink-0 items-center" aria-label="EventFlow, accueil"><img src="/eventflow-logo-fond-sombre.svg" alt="EventFlow — Billetterie et événements" className="h-9 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[190px]"/></Link>
       <nav className="hidden items-center gap-1 lg:flex" aria-label="Navigation principale"><Link to="/events" className={linkClass}>{t("nav.events")}</Link>{isLoggedIn&&<Link to="/my-tickets" className={linkClass}>{t("nav.tickets")}</Link>}<Link to="/about" className={linkClass}>{t("nav.about")}</Link></nav>
       <div className="hidden shrink-0 items-center gap-1 lg:flex">{accountActions}</div>
+      {showBack&&<Button variant="ghost" size="icon" className="ml-auto shrink-0 text-white/80 hover:bg-white/10 hover:text-white lg:hidden" aria-label={t("nav.back")} onClick={handleBack}><ArrowLeft className="h-5 w-5"/></Button>}
       <Button variant="outline" size="icon" className="shrink-0 border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white lg:hidden" aria-label={mobileOpen?t("nav.close"):t("nav.menu")} aria-expanded={mobileOpen} onClick={()=>setMobileOpen(v=>!v)}>{mobileOpen?<X className="h-5 w-5"/>:<Menu className="h-5 w-5"/>}</Button>
     </div>
     {mobileOpen&&<div className="border-t border-white/10 bg-black px-4 pb-4 pt-3 shadow-xl motion-safe:animate-fade-in lg:hidden">
