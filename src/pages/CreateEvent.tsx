@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, MapPin, Users, Plus, Trash2, ImagePlus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Event, TicketType } from "@/data/events";
 
 
@@ -29,8 +29,19 @@ const CreateEvent = () => {
   const [imageFile,setImageFile]=useState<File|null>(null);
   const [imagePreview,setImagePreview]=useState("");
   const [saving,setSaving]=useState(false);
+  const [subscriptionGate,setSubscriptionGate]=useState<"checking"|"allowed"|"required"|"unavailable">("checking");
   
   const navigate = useNavigate();
+
+  useEffect(()=>{
+    const role=localStorage.getItem("userRole")||"";
+    if(role==="admin"){setSubscriptionGate("allowed");return;}
+    if(role!=="organizer"){navigate("/login",{replace:true,state:{from:"/create-event"}});return;}
+    fetch("/api/subscription.php",{headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}})
+      .then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||"API unavailable");return data;})
+      .then(data=>setSubscriptionGate(data.subscription&&["active","grace"].includes(data.subscription.status)?"allowed":"required"))
+      .catch(()=>setSubscriptionGate("unavailable"));
+  },[navigate]);
 
   useEffect(()=>{if(!imageFile){setImagePreview("");return;}const url=URL.createObjectURL(imageFile);setImagePreview(url);return()=>URL.revokeObjectURL(url);},[imageFile]);
 
@@ -92,6 +103,8 @@ const CreateEvent = () => {
         : ticket
     ));
   };
+
+  if(subscriptionGate!=="allowed")return <main className="container mx-auto flex min-h-[65vh] max-w-2xl items-center px-4 py-12"><Card className="w-full"><CardHeader><CardTitle>{subscriptionGate==="checking"?"Vérification de votre abonnement…":subscriptionGate==="required"?"Abonnement requis":"Service d’abonnement indisponible"}</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-sm leading-relaxed text-muted-foreground">{subscriptionGate==="required"?"Choisissez une formule active avant de créer votre événement. Vos événements déjà publiés et vos billets existants restent accessibles.":subscriptionGate==="unavailable"?"La connexion au service est momentanément impossible. Réessayez lorsque l’API EventFlow sera disponible.":"Nous vérifions les droits de votre compte organisateur."}</p>{subscriptionGate==="required"&&<Link to="/subscription"><Button>Voir les formules d’abonnement</Button></Link>}{subscriptionGate==="unavailable"&&<Button variant="outline" onClick={()=>window.location.reload()}>Réessayer</Button>}</CardContent></Card></main>;
 
   return (
     <div className="min-h-screen bg-transparent">

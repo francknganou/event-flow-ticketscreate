@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ const Signup = () => {
     acceptTerms: false
   });
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [busy,setBusy]=useState(false);
+  const [formError,setFormError]=useState("");
   const navigate = useNavigate();
   const {t,language}=useApp();
 
@@ -34,12 +36,15 @@ const Signup = () => {
     if (!registrationEnabled) {
       return;
     }
+    if(!formData.acceptTerms){toast.error(language==='fr'?"Veuillez accepter les conditions d’utilisation.":"Please accept the terms of use.");return;}
     if (formData.password !== formData.confirmPassword) { toast.error('Les mots de passe ne correspondent pas.'); return; }
+    if(formData.password.length<8){toast.error(language==='fr'?"Le mot de passe doit contenir au moins 8 caractères.":"Password must contain at least 8 characters.");return;}
+    setBusy(true);setFormError("");
     try {
       const response = await fetch('/api/auth.php?action=signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(formData)});
       const user=await response.json(); if(!response.ok) throw new Error(user.error || 'Inscription impossible');
       localStorage.setItem('isLoggedIn','true');localStorage.setItem('userRole',user.role);localStorage.setItem('userEmail',user.email);localStorage.setItem('sessionToken',user.token);localStorage.setItem('userFirstName',formData.firstName);localStorage.setItem('userLastName',formData.lastName);navigate('/events');
-    } catch(error) { toast.error(error instanceof Error ? error.message : 'API indisponible.'); }
+    } catch(error) { const message=error instanceof Error?error.message:(language==='fr'?'API indisponible.':'API unavailable.');setFormError(message);toast.error(message); } finally {setBusy(false);}
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -70,12 +75,14 @@ const Signup = () => {
               <p className="text-muted-foreground">{language === "fr" ? "Créez votre compte EventFlow" : "Create your EventFlow account"}</p>
             </CardHeader>
             <CardContent>
+              {formError&&<Alert variant="destructive" className="mb-5"><AlertCircle className="h-4 w-4"/><AlertDescription>{formError}</AlertDescription></Alert>}
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">{t("signup.firstName")}</Label>
                     <Input
                       id="firstName"
+                      autoComplete="given-name"
                       value={formData.firstName}
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
                       placeholder={t("signup.firstName")}
@@ -86,6 +93,7 @@ const Signup = () => {
                     <Label htmlFor="lastName">{t("signup.lastName")}</Label>
                     <Input
                       id="lastName"
+                      autoComplete="family-name"
                       value={formData.lastName}
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
                       placeholder={t("signup.lastName")}
@@ -99,6 +107,7 @@ const Signup = () => {
                   <Input
                     id="email"
                     type="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="votre@email.com"
@@ -111,6 +120,7 @@ const Signup = () => {
                   <Input
                     id="password"
                     type="password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     placeholder="••••••••"
@@ -123,6 +133,7 @@ const Signup = () => {
                   <Input
                     id="confirmPassword"
                     type="password"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                     placeholder="••••••••"
@@ -149,9 +160,9 @@ const Signup = () => {
                   type="submit" 
                   variant="hero" 
                   className="w-full"
-                  disabled={!registrationEnabled}
+                  disabled={!registrationEnabled||busy}
                 >
-                  Créer mon compte
+                  {busy&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{busy?(language==='fr'?'Création du compte…':'Creating account…'):(language==='fr'?'Créer mon compte':'Create account')}
                 </Button>
               </form>
               

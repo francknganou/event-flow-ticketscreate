@@ -7,22 +7,27 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/contexts/AppContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [busy,setBusy]=useState(false);
+  const [formError,setFormError]=useState("");
   const navigate = useNavigate();
-  const {t}=useApp();
+  const {t,language}=useApp();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBusy(true);setFormError("");
     try {
       const response = await fetch('/api/auth.php', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
       const user = await response.json();
       if (!response.ok) throw new Error(user.error || 'Connexion impossible');
       localStorage.setItem('isLoggedIn','true'); localStorage.setItem('userRole',user.role); localStorage.setItem('userEmail',user.email); localStorage.setItem('sessionToken',user.token); localStorage.setItem('userFirstName',user.first_name); localStorage.setItem('userLastName',user.last_name);
       navigate('/events');
-    } catch (error) { toast.error(error instanceof Error ? error.message : 'API indisponible.'); }
+    } catch (error) { const message=error instanceof Error?error.message:'API indisponible.';setFormError(message);toast.error(message); } finally {setBusy(false);}
   };
 
   return (
@@ -38,12 +43,14 @@ const Login = () => {
               <p className="text-muted-foreground">{t("login.subtitle")}</p>
             </CardHeader>
             <CardContent>
+              {formError&&<Alert variant="destructive" className="mb-5"><AlertCircle className="h-4 w-4"/><AlertDescription>{formError}</AlertDescription></Alert>}
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("login.email")}</Label>
                   <Input
                     id="email"
                     type="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="votre@email.com"
@@ -56,6 +63,7 @@ const Login = () => {
                   <Input
                     id="password"
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -63,8 +71,8 @@ const Login = () => {
                   />
                 </div>
                 
-                <Button type="submit" variant="hero" className="w-full">
-                  {t("login.submit")}
+                <Button type="submit" variant="hero" className="w-full" disabled={busy}>
+                  {busy&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{busy?(language==='fr'?'Connexion…':'Signing in…'):t("login.submit")}
                 </Button>
               </form>
               

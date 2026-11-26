@@ -15,14 +15,15 @@ if(($_GET['admin']??'')==='1'){
 $user=requireUser();
 if(!in_array($user['role'],['organizer','admin'],true))reply(['error'=>'Réservé aux organisateurs.'],403);
 if($_SERVER['REQUEST_METHOD']==='GET'){
-  $q=$pdo->prepare("SELECT s.*,p.name AS plan_name,p.monthly_price,p.annual_price,p.max_events,p.max_tickets_per_event,p.max_ticket_types,p.max_controllers,p.commission,p.features FROM subscriptions s JOIN plans p ON p.id=s.plan_id WHERE organizer_id=? ORDER BY s.id DESC LIMIT 1");$q->execute([$user['id']]);$s=$q->fetch();
+  $q=$pdo->prepare("SELECT s.*,p.name AS plan_name,p.monthly_price,p.annual_price,p.max_events,p.max_tickets_per_event,p.max_ticket_types,p.max_controllers,p.commission,p.features FROM subscriptions s JOIN plans p ON p.id=s.plan_id WHERE organizer_id=? ORDER BY CASE WHEN s.status IN ('active','grace') AND (s.ends_at IS NULL OR s.ends_at>=NOW()) THEN 0 ELSE 1 END,s.id DESC LIMIT 1");$q->execute([$user['id']]);$s=$q->fetch();
   if($s&&$s['ends_at']&&strtotime($s['ends_at'])<time()&&$s['status']==='active'){$pdo->prepare("UPDATE subscriptions SET status='expired' WHERE id=?")->execute([$s['id']]);$s['status']='expired';}
   $q=$pdo->prepare("SELECT COUNT(*) FROM events WHERE organizer_id=? AND status IN ('draft','published','ongoing')");$q->execute([$user['id']]);$events=(int)$q->fetchColumn();
-  if(!$s)reply(['subscription'=>null,'usage'=>['events'=>$events],'message'=>'Choisissez une formule pour activer votre espace organisateur.']);
-  $s['features']=json_decode($s['features']??'[]',true)?:[];$s['usage']=['events'=>$events];
+  $q=$pdo->prepare('SELECT COUNT(DISTINCT es.user_id) FROM event_staff es JOIN events e ON e.id=es.event_id WHERE e.organizer_id=?');$q->execute([$user['id']]);$controllers=(int)$q->fetchColumn();
+  if(!$s)reply(['subscription'=>null,'usage'=>['events'=>$events,'controllers'=>$controllers],'message'=>'Choisissez une formule pour activer votre espace organisateur.']);
+  $s['features']=json_decode($s['features']??'[]',true)?:[];$s['usage']=['events'=>$events,'controllers'=>$controllers];
   $base=(int)($s['billing_period']==='annual'?$s['annual_price']:$s['monthly_price']);$delta=$s['adjustment_type']==='percent'?$base*(float)$s['adjustment_value']/100:($s['adjustment_type']==='fixed'?(float)$s['adjustment_value']:0);$s['base_price']=$base;$s['effective_price']=max(0,(int)round($base+$delta));
   $q=$pdo->prepare('SELECT id,amount,currency,status,created_at FROM subscription_payments WHERE subscription_id=? ORDER BY id DESC LIMIT 20');$q->execute([$s['id']]);$s['payments']=$q->fetchAll();
-  reply(['subscription'=>$s,'usage'=>['events'=>$events]]);
+  reply(['subscription'=>$s,'usage'=>['events'=>$events,'controllers'=>$controllers]]);
 }
 if($_SERVER['REQUEST_METHOD']!=='POST')reply(['error'=>'Méthode invalide.'],405);
 rateLimit('subscription:'.$user['id'],10,60);$d=body();$planId=(string)($d['planId']??'');$period=(string)($d['period']??'monthly');
@@ -30,7 +31,9 @@ if(!in_array($period,['monthly','annual'],true))reply(['error'=>'Durée invalide
 $q=$pdo->prepare('SELECT * FROM plans WHERE id=?');$q->execute([$planId]);$plan=$q->fetch();if(!$plan)reply(['error'=>'Formule introuvable.'],404);
 $amount=(int)($period==='annual'?$plan['annual_price']:$plan['monthly_price']);
 $pdo->beginTransaction();try{
-  $pdo->prepare("UPDATE subscriptions SET status='cancelled' WHERE organizer_id=? AND status IN ('active','grace','pending_payment')")->execute([$user['id']]);
+  // Keep a paid, currently active plan while a new plan awaits provider confirmation.
+  // Only replace it immediately for the zero-cost plan.
+  if($amount===0)$pdo->prepare("UPDATE subscriptions SET status='cancelled' WHERE organizer_id=? AND status IN ('active','grace','pending_payment')")->execute([$user['id']]);
   $status=$amount===0?'active':'pending_payment';$start=$amount===0?date('Y-m-d H:i:s'):null;$end=$amount===0?date('Y-m-d H:i:s',strtotime($period==='annual'?'+1 year':'+1 month')):null;
   $pdo->prepare('INSERT INTO subscriptions(organizer_id,plan_id,billing_period,status,starts_at,ends_at) VALUES(?,?,?,?,?,?)')->execute([$user['id'],$planId,$period,$status,$start,$end]);$sid=(int)$pdo->lastInsertId();
   if($amount>0)$pdo->prepare("INSERT INTO subscription_payments(subscription_id,amount,status) VALUES(?,?,'pending')")->execute([$sid,$amount]);

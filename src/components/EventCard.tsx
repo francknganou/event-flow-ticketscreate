@@ -40,11 +40,6 @@ export const EventCard = (props: EventCardProps) => {
   };
 
   const handleReservation = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
-      navigate('/login');
-      return;
-    }
     setIsBookingOpen(true);
   };
 
@@ -61,6 +56,8 @@ export const EventCard = (props: EventCardProps) => {
   };
 
   const t = (texts as any)[language] || texts.en;
+  const remainingPercent=capacity>0?availableTickets/capacity:1;
+  const availabilityLabel=availableTickets<=0?(language==='fr'?'Complet':'Sold out'):remainingPercent<=0.1?(language==='fr'?'Bientôt complet':'Almost full'):price===0?(language==='fr'?'Gratuit':'Free'):'';
 
   return (
     <Card className="group overflow-hidden bg-card border-border shadow-card transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
@@ -76,6 +73,7 @@ export const EventCard = (props: EventCardProps) => {
         <div className="absolute top-3 right-3 bg-accent/90 backdrop-blur-sm px-2 py-1 rounded-md">
           <span className="text-xs font-bold text-accent-foreground">{formatPrice(price)}</span>
         </div>
+        {availabilityLabel&&<div className={`absolute bottom-3 left-3 rounded-md px-2.5 py-1 text-xs font-bold text-white shadow ${availableTickets<=0?'bg-zinc-800/90':remainingPercent<=0.1?'bg-orange-600/95':'bg-emerald-600/95'}`}>{availabilityLabel}</div>}
       </div>
       
       <CardContent className="p-4 space-y-3">

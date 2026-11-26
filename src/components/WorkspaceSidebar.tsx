@@ -23,10 +23,7 @@ const items: {key:TranslationKey;to:string;icon:LucideIcon;roles:string[]}[] = [
   { key: "sidebar.requestOrganizer", to: "/organizer-request", icon: UserRound, roles: ["user"] },
   { key: "sidebar.scan", to: "/scanner", icon: QrCode, roles: ["staff"] },
   { key: "sidebar.explore", to: "/events", icon: CalendarDays, roles: ["visitor"] },
-  { key: "sidebar.pricing", to: "/pricing", icon: CreditCard, roles: ["visitor"] },
   { key: "nav.about", to: "/about", icon: Compass, roles: ["admin", "organizer", "staff", "user", "visitor"] },
-  { key: "sidebar.signin", to: "/login", icon: UserRound, roles: ["visitor"] },
-  { key: "sidebar.signup", to: "/signup", icon: Plus, roles: ["visitor"] },
 ];
 
 export const WorkspaceSidebar = () => {
