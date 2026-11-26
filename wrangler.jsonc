@@ -8,5 +8,12 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "eventflow",
+      "database_id": "1356619f-6b8a-4b6e-ae07-92b36bae6364"
+    }
+  ]
 }
