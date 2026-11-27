@@ -9,6 +9,7 @@ const items: {key:TranslationKey;to:string;icon:LucideIcon;roles:string[]}[] = [
   { key: "sidebar.overview", to: "/dashboard", icon: Activity, roles: ["admin", "organizer"] },
   { key: "sidebar.reports", to: "/reports", icon: Activity, roles: ["admin", "organizer"] },
   { key: "sidebar.requests", to: "/organizer-requests", icon: UserRound, roles: ["admin"] },
+  { key: "sidebar.users", to: "/users", icon: UserRound, roles: ["admin"] },
   { key: "sidebar.moderation", to: "/events", icon: CalendarDays, roles: ["admin"] },
   { key: "sidebar.manageEvents", to: "/events", icon: CalendarDays, roles: ["organizer"] },
   { key: "sidebar.sales", to: "/reports", icon: Ticket, roles: ["organizer"] },

@@ -73,4 +73,15 @@ npx wrangler d1 execute eventflow --remote --file=database/backfill-marketplace-
 
 Les anciens QR chiffrés restent dans `issued_tickets`; ils ne sont pas convertis en nouveaux jetons, car leur clé de déchiffrement n'est pas configurée comme secret Worker.
 
+## Vérification des e-mails et gestion des comptes
+
+Appliquer aussi les migrations idempotentes suivantes sur la base déjà créée :
+
+```powershell
+npx wrangler d1 execute eventflow --remote --file=database/migrations/20261127_email_verification.sql
+npx wrangler d1 execute eventflow --remote --file=database/migrations/20261127_user_account_status.sql
+```
+
+Les comptes déjà présents sont considérés comme actifs et ne sont pas soumis rétroactivement à la confirmation e-mail. Les nouvelles inscriptions attendent un lien Brevo à usage unique. Dans le menu administrateur, **Gestion des utilisateurs** permet de rechercher, filtrer, activer et désactiver les comptes; une désactivation ferme les sessions actives. La suppression efface les coordonnées personnelles et invalide les accès tout en conservant les références historiques requises par les billets, paiements et journaux. Le compte connecté et le dernier administrateur actif sont protégés.
+
 Conserver MySQL et sa sauvegarde jusqu'à validation de la migration et de toutes les routes métier. Les paiements restent inactifs tant que leurs prestataires et webhooks signés ne sont pas configurés.

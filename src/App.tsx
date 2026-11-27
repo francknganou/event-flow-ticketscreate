@@ -25,6 +25,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const OrganizerRequests = lazy(() => import("./pages/OrganizerRequests"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Messages = lazy(() => import("./pages/Messages"));
+const UsersManagement = lazy(() => import("./pages/UsersManagement"));
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/organizer-requests" element={<OrganizerRequests />} />
+            <Route path="/users" element={<UsersManagement />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/pricing" element={<Navigate to="/subscription" replace />} />
             <Route path="/messages" element={<Messages />} />

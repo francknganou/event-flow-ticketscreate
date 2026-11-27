@@ -6,7 +6,7 @@ interface Statement {
   all<T = Record<string, unknown>>(): Promise<{ success: boolean; results?: T[] }>;
   run<T = Record<string, unknown>>(): Promise<{ success: boolean; meta: { last_row_id?: number; changes?: number }; results?: T[] }>;
 }
-interface Database { prepare(query: string): Statement }
+interface Database { prepare(query: string): Statement; batch<T = unknown>(statements: Statement[]): Promise<T[]> }
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
   DB: Database;
@@ -15,7 +15,7 @@ interface Env {
   BREVO_SENDER_EMAIL?: string;
   BREVO_SENDER_NAME?: string;
 }
-type UserRow = { id: number; first_name: string; last_name: string; email: string; password_hash: string; role: string };
+type UserRow = { id: number; first_name: string; last_name: string; email: string; password_hash: string; role: string; account_status?: string };
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -60,7 +60,8 @@ async function currentUser(request: Request, env: Env): Promise<UserRow | null> 
   if (!raw) return null;
   return env.DB.prepare(`SELECT u.id,u.first_name,u.last_name,u.email,u.password_hash,u.role
     FROM api_tokens t JOIN users u ON u.id=t.user_id
-    WHERE t.token_hash=? AND datetime(t.expires_at)>datetime('now')`)
+    LEFT JOIN user_account_status s ON s.user_id=u.id
+    WHERE t.token_hash=? AND datetime(t.expires_at)>datetime('now') AND COALESCE(s.status,'active')='active'`)
     .bind(await digest(raw)).first<UserRow>();
 }
 
@@ -94,6 +95,94 @@ async function eventsApi(request: Request, env: Env, user: UserRow | null): Prom
       })) };
   }));
   return noStoreJson(output);
+}
+
+async function usersApi(request: Request, env: Env, user: UserRow | null): Promise<Response> {
+  if (!user) return json({ error: "Connectez-vous pour gérer les utilisateurs." }, 401);
+  if (user.role !== 'admin') return json({ error: "Accès réservé à l’administrateur." }, 403);
+  const url = new URL(request.url);
+  if (request.method === 'GET') {
+    const pageSize = 25;
+    const page = Math.max(1, Math.min(10_000, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1));
+    const query = (url.searchParams.get('q') || '').trim().slice(0, 120);
+    const filter = url.searchParams.get('status') || 'all';
+    if (!['all','active','disabled','deleted'].includes(filter)) return json({ error: "Filtre de statut invalide." }, 422);
+    const clauses: string[] = [];
+    const params: unknown[] = [];
+    if (query) {
+      clauses.push("(u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ? OR u.role LIKE ?)");
+      const pattern = `%${query}%`;
+      params.push(pattern, pattern, pattern, pattern);
+    }
+    if (filter !== 'all') { clauses.push("COALESCE(s.status,'active')=?"); params.push(filter); }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const count = await env.DB.prepare(`SELECT COUNT(*) AS total FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id ${where}`)
+      .bind(...params).first<{ total: number }>();
+    const users = await env.DB.prepare(`SELECT u.id,u.first_name,u.last_name,u.email,u.role,u.created_at,
+      COALESCE(s.status,'active') AS status,CASE WHEN v.user_id IS NULL OR v.verified_at IS NOT NULL THEN 1 ELSE 0 END AS email_verified
+      FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id LEFT JOIN email_verifications v ON v.user_id=u.id
+      ${where} ORDER BY CASE WHEN COALESCE(s.status,'active')='deleted' THEN 1 ELSE 0 END,u.created_at DESC,u.id DESC
+      LIMIT ? OFFSET ?`).bind(...params, pageSize, (page - 1) * pageSize).all<any>();
+    const totals = await env.DB.prepare(`SELECT COUNT(*) AS total,
+      SUM(CASE WHEN COALESCE(s.status,'active')='active' THEN 1 ELSE 0 END) AS active,
+      SUM(CASE WHEN s.status='disabled' THEN 1 ELSE 0 END) AS disabled,
+      SUM(CASE WHEN s.status='deleted' THEN 1 ELSE 0 END) AS deleted,
+      SUM(CASE WHEN v.user_id IS NOT NULL AND v.verified_at IS NULL THEN 1 ELSE 0 END) AS pending_verification
+      FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id LEFT JOIN email_verifications v ON v.user_id=u.id`).first<any>();
+    const total = Number(count?.total || 0);
+    return noStoreJson({ users: users.results || [], stats: { total: Number(totals?.total || 0), active: Number(totals?.active || 0), disabled: Number(totals?.disabled || 0), deleted: Number(totals?.deleted || 0), pendingVerification: Number(totals?.pending_verification || 0) }, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)), currentUserId: user.id });
+  }
+
+  const id = Number(url.searchParams.get('id'));
+  if (!Number.isSafeInteger(id) || id <= 0) return json({ error: "Identifiant d’utilisateur invalide." }, 422);
+  const target = await env.DB.prepare(`SELECT u.id,u.first_name,u.last_name,u.email,u.role,COALESCE(s.status,'active') AS status
+    FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id WHERE u.id=?`).bind(id).first<any>();
+  if (!target) return json({ error: "Utilisateur introuvable." }, 404);
+  if (request.method === 'DELETE') {
+    if (target.id === user.id) return json({ error: "Vous ne pouvez pas supprimer votre propre compte administrateur." }, 409);
+    if (target.status === 'deleted') return json({ error: "Ce compte est déjà supprimé." }, 409);
+    if (target.role === 'admin' && target.status === 'active') {
+      const admins = await env.DB.prepare(`SELECT COUNT(*) AS total FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id
+        WHERE u.role='admin' AND COALESCE(s.status,'active')='active'`).first<{ total: number }>();
+      if (Number(admins?.total || 0) <= 1) return json({ error: "Impossible de supprimer le dernier administrateur actif." }, 409);
+    }
+    const erasedEmail = `deleted-${target.id}-${Date.now()}@invalid.eventflow`;
+    const replacementPassword = await bcrypt.hash(newToken(), 12);
+    const details = JSON.stringify({ status: 'deleted', previous_role: target.role });
+    await env.DB.batch([
+      env.DB.prepare("UPDATE users SET first_name='Compte',last_name='supprimé',email=?,password_hash=? WHERE id=?").bind(erasedEmail, replacementPassword, target.id),
+      env.DB.prepare(`INSERT INTO user_account_status(user_id,status,changed_by) VALUES(?,'deleted',?)
+        ON CONFLICT(user_id) DO UPDATE SET status='deleted',changed_by=excluded.changed_by,changed_at=CURRENT_TIMESTAMP`).bind(target.id, user.id),
+      env.DB.prepare("DELETE FROM api_tokens WHERE user_id=?").bind(target.id),
+      env.DB.prepare("DELETE FROM email_verifications WHERE user_id=?").bind(target.id),
+      env.DB.prepare("UPDATE audit_logs SET actor_email='Compte supprimé' WHERE actor_user_id=?").bind(target.id),
+      env.DB.prepare(`INSERT INTO audit_logs(actor_user_id,actor_email,action,entity_type,entity_id,details)
+        VALUES(?,?,'user.deleted','user',?,?)`).bind(user.id, user.email, String(target.id), details),
+    ]);
+    return json({ ok: true, message: "Le profil est supprimé et anonymisé. Les historiques liés aux billets et aux ventes sont conservés." });
+  }
+  if (request.method !== 'POST') return json({ error: "Méthode invalide." }, 405);
+  const body = await request.json().catch(() => null) as { status?: string } | null;
+  if (!body || !['active','disabled'].includes(body.status || '')) return json({ error: "Statut demandé invalide." }, 422);
+  if (target.status === 'deleted') return json({ error: "Un compte supprimé ne peut pas être réactivé." }, 409);
+  if (target.status === body.status) return json({ ok: true, message: body.status === 'active' ? "Le compte est déjà actif." : "Le compte est déjà désactivé." });
+  if (body.status === 'disabled' && target.id === user.id) return json({ error: "Vous ne pouvez pas désactiver votre propre compte administrateur." }, 409);
+  if (body.status === 'disabled' && target.role === 'admin') {
+    const admins = await env.DB.prepare(`SELECT COUNT(*) AS total FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id
+      WHERE u.role='admin' AND COALESCE(s.status,'active')='active'`).first<{ total: number }>();
+    if (Number(admins?.total || 0) <= 1) return json({ error: "Impossible de désactiver le dernier administrateur actif." }, 409);
+  }
+  const action = body.status === 'disabled' ? 'user.disabled' : 'user.activated';
+  const details = JSON.stringify({ status: body.status, previous_role: target.role });
+  const statements = [
+    env.DB.prepare(`INSERT INTO user_account_status(user_id,status,changed_by) VALUES(?,?,?)
+      ON CONFLICT(user_id) DO UPDATE SET status=excluded.status,changed_by=excluded.changed_by,changed_at=CURRENT_TIMESTAMP`).bind(target.id, body.status, user.id),
+    env.DB.prepare(`INSERT INTO audit_logs(actor_user_id,actor_email,action,entity_type,entity_id,details)
+      VALUES(?,?,?,'user',?,?)`).bind(user.id, user.email, action, String(target.id), details),
+  ];
+  if (body.status === 'disabled') statements.push(env.DB.prepare("DELETE FROM api_tokens WHERE user_id=?").bind(target.id));
+  await env.DB.batch(statements);
+  return json({ ok: true, message: body.status === 'disabled' ? "Compte désactivé. Ses sessions ont été fermées." : "Compte réactivé. L’utilisateur peut se reconnecter." });
 }
 
 async function subscriptionApi(request: Request, env: Env, user: UserRow | null): Promise<Response> {
@@ -214,6 +303,7 @@ async function routeApi(request: Request, env: Env, path: string): Promise<Respo
   try {
     const user = await currentUser(request, env);
     if (path === '/api/events.php') return eventsApi(request, env, user);
+    if (path === '/api/users.php') return usersApi(request, env, user);
     if (path === '/api/subscription.php') return subscriptionApi(request, env, user);
     if (path === '/api/dashboard.php') return dashboardApi(request, env, user);
     if (path === '/api/email.php') return emailApi(request, env, user);
@@ -299,8 +389,10 @@ async function authApi(request: Request, env: Env, url: URL): Promise<Response> 
     if (!sent) return json({ error: "Votre compte est créé mais reste en attente de confirmation. L’e-mail n’a pas pu être envoyé; réessayez avec le bouton de renvoi.", message: "L’envoi a échoué. Vérifiez la configuration Brevo puis utilisez le bouton pour renvoyer le lien.", verificationRequired: true, email }, 502);
     return json({ verificationRequired: true, email, message: "Un lien de confirmation vient d’être envoyé à votre adresse e-mail." }, 201);
   } else {
-    user = await env.DB.prepare("SELECT id,first_name,last_name,email,password_hash,role FROM users WHERE email=?").bind(email).first<UserRow>();
+    user = await env.DB.prepare(`SELECT u.id,u.first_name,u.last_name,u.email,u.password_hash,u.role,
+      COALESCE(s.status,'active') AS account_status FROM users u LEFT JOIN user_account_status s ON s.user_id=u.id WHERE u.email=?`).bind(email).first<UserRow>();
     if (!user || !(await bcrypt.compare(password, user.password_hash))) return json({ error: "E-mail ou mot de passe incorrect." }, 401);
+    if (user.account_status !== 'active') return json({ error: "Ce compte est désactivé. Contactez l’administrateur." }, 403);
     const verification = await env.DB.prepare("SELECT verified_at FROM email_verifications WHERE user_id=?").bind(user.id).first<{ verified_at: string | null }>();
     if (verification && !verification.verified_at) return json({ error: "Confirmez votre adresse e-mail avant de vous connecter. Vous pouvez renvoyer le lien depuis la page d’inscription.", verificationRequired: true }, 403);
   }
