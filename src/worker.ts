@@ -162,7 +162,20 @@ async function usersApi(request: Request, env: Env, user: UserRow | null): Promi
     return json({ ok: true, message: "Le profil est supprimé et anonymisé. Les historiques liés aux billets et aux ventes sont conservés." });
   }
   if (request.method !== 'POST') return json({ error: "Méthode invalide." }, 405);
-  const body = await request.json().catch(() => null) as { status?: string } | null;
+  const body = await request.json().catch(() => null) as { status?: string; action?: string } | null;
+  if (body?.action === 'confirm-email') {
+    if (target.status === 'deleted') return json({ error: "Un compte supprimé ne peut pas être confirmé." }, 409);
+    if (target.id === user.id) return json({ error: "Vous ne pouvez pas confirmer vous-même ce compte administrateur." }, 409);
+    const pendingEmail = await env.DB.prepare("SELECT verified_at FROM email_verifications WHERE user_id=?").bind(target.id).first<{ verified_at: string | null }>();
+    if (!pendingEmail) return json({ error: "Ce compte ne requiert pas de confirmation e-mail." }, 409);
+    if (pendingEmail.verified_at) return json({ ok: true, message: "L’adresse e-mail est déjà confirmée." });
+    await env.DB.batch([
+      env.DB.prepare("UPDATE email_verifications SET verified_at=CURRENT_TIMESTAMP,token_hash=NULL WHERE user_id=? AND verified_at IS NULL").bind(target.id),
+      env.DB.prepare(`INSERT INTO audit_logs(actor_user_id,actor_email,action,entity_type,entity_id,details)
+        VALUES(?,?,'user.email_confirmed_by_admin','user',?,?)`).bind(user.id,user.email,String(target.id),JSON.stringify({email_confirmation:'admin'})),
+    ]);
+    return json({ ok: true, message: "Compte confirmé par l’administrateur. Aucune vérification par e-mail n’est désormais requise." });
+  }
   if (!body || !['active','disabled'].includes(body.status || '')) return json({ error: "Statut demandé invalide." }, 422);
   if (target.status === 'deleted') return json({ error: "Un compte supprimé ne peut pas être réactivé." }, 409);
   if (target.status === body.status) return json({ ok: true, message: body.status === 'active' ? "Le compte est déjà actif." : "Le compte est déjà désactivé." });
