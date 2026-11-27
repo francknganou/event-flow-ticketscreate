@@ -23,6 +23,10 @@ const Signup = () => {
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [busy,setBusy]=useState(false);
   const [formError,setFormError]=useState("");
+  const [verificationSent,setVerificationSent]=useState(false);
+  const [verificationBusy,setVerificationBusy]=useState(false);
+  const [verificationEmail,setVerificationEmail]=useState("");
+  const [verificationWarning,setVerificationWarning]=useState("");
   const navigate = useNavigate();
   const {t,language}=useApp();
 
@@ -42,9 +46,19 @@ const Signup = () => {
     setBusy(true);setFormError("");
     try {
       const response = await fetch('/api/auth.php?action=signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(formData)});
-      const user=await response.json(); if(!response.ok) throw new Error(user.error || 'Inscription impossible');
+      const user=await response.json();
+      if(user.verificationRequired){setVerificationEmail(user.email||formData.email.trim());setVerificationWarning(response.ok?'':user.error||'');setVerificationSent(true);toast[response.ok?'success':'error'](user.message||(language==='fr'?'Compte créé. Confirmez votre adresse e-mail pour l’activer.':'Account created. Confirm your email address to activate it.'));return;}
+      if(!response.ok) throw new Error(user.error || 'Inscription impossible');
       localStorage.setItem('isLoggedIn','true');localStorage.setItem('userRole',user.role);localStorage.setItem('userEmail',user.email);localStorage.setItem('sessionToken',user.token);localStorage.setItem('userFirstName',formData.firstName);localStorage.setItem('userLastName',formData.lastName);navigate('/events');
     } catch(error) { const message=error instanceof Error?error.message:(language==='fr'?'API indisponible.':'API unavailable.');setFormError(message);toast.error(message); } finally {setBusy(false);}
+  };
+
+  const resendVerification=async(email=verificationEmail||formData.email.trim())=>{
+    if(!email){toast.error(language==='fr'?'Saisissez votre adresse e-mail.':'Enter your email address.');return;}
+    setVerificationBusy(true);
+    try{const response=await fetch('/api/auth.php?action=resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Envoi impossible.');setVerificationEmail(email);toast.success(language==='fr'?result.message:'If this address has an account awaiting confirmation, a new link has been sent.');}
+    catch(error){toast.error(error instanceof Error?error.message:(language==='fr'?'Envoi impossible.':'Unable to send.'));}
+    finally{setVerificationBusy(false);}
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -76,7 +90,7 @@ const Signup = () => {
             </CardHeader>
             <CardContent>
               {formError&&<Alert variant="destructive" className="mb-5"><AlertCircle className="h-4 w-4"/><AlertDescription>{formError}</AlertDescription></Alert>}
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {verificationSent?<div className="space-y-4"><Alert variant={verificationWarning?'destructive':'default'}><AlertCircle className="h-4 w-4"/><AlertDescription>{verificationWarning|| (language==='fr'?`Un lien de confirmation a été envoyé à ${verificationEmail}. Consultez aussi vos courriers indésirables. Le lien expire dans 24 heures.`:`A confirmation link was sent to ${verificationEmail}. Check your spam folder too. The link expires in 24 hours.`)}</AlertDescription></Alert><Button type="button" variant="hero" className="w-full" disabled={verificationBusy} onClick={()=>void resendVerification()}>{verificationBusy&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{language==='fr'?'Renvoyer le lien de confirmation':'Resend confirmation link'}</Button><p className="text-center text-sm text-muted-foreground"><Link to="/login" className="font-medium text-primary hover:underline">{language==='fr'?'Aller à la connexion':'Go to sign in'}</Link></p></div>:<><form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">{t("signup.firstName")}</Label>
@@ -164,7 +178,7 @@ const Signup = () => {
                 >
                   {busy&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{busy?(language==='fr'?'Création du compte…':'Creating account…'):(language==='fr'?'Créer mon compte':'Create account')}
                 </Button>
-              </form>
+              </form><div className="mt-5 border-t pt-4 text-center"><p className="mb-2 text-sm text-muted-foreground">{language==='fr'?"Vous avez créé un compte mais n’avez pas reçu le lien ?":"Created an account but didn’t get the link?"}</p><Button type="button" variant="link" className="h-auto p-0" disabled={!formData.email.trim()||verificationBusy} onClick={()=>void resendVerification(formData.email.trim())}>{verificationBusy&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{language==='fr'?'Renvoyer le lien de confirmation':'Resend confirmation link'}</Button></div></>}
               
               <div className="mt-6 text-center">
                 <p className="text-muted-foreground">

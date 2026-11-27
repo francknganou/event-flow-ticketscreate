@@ -24,6 +24,18 @@ Une fois les secrets enregistrés et le compte administrateur connecté sur le s
 
 Une réponse positive signifie que Brevo a accepté le message pour traitement. Vérifiez ensuite la boîte de réception, les courriers indésirables et les journaux transactionnels Brevo pour confirmer son état de livraison.
 
+## 4. Confirmation des nouvelles inscriptions
+
+Chaque nouvelle inscription crée un compte non vérifié et envoie un lien à usage unique valable 24 heures. La connexion est refusée tant que le lien n'a pas été confirmé. Le lien et son empreinte sont stockés dans D1; un utilisateur peut demander un nouvel envoi depuis la page d'inscription ou la page de confirmation. Les comptes déjà existants (notamment l'administrateur) n'ont pas de ligne de vérification et gardent leur accès.
+
+L'e-mail de confirmation part de `BREVO_SENDER_EMAIL` avec le nom `EventFlow`. Cette adresse doit être vérifiée dans Brevo et `BREVO_API_KEY` doit contenir une clé API (pas une clé SMTP).
+
+Appliquer la migration une fois dans D1 :
+
+```powershell
+npx wrangler d1 execute eventflow --remote --file=database/migrations/20261127_email_verification.sql
+```
+
 ## État actuel
 
-Cette intégration ajoute la connexion fournisseur et le test administrateur. Elle ne déclenche pas encore l'envoi automatique des billets, factures ou rappels : ces flux métier devront appeler le service après leur migration complète vers D1.
+Cette intégration ajoute la confirmation d'inscription et le test administrateur. Elle ne déclenche pas encore l'envoi automatique des billets, factures ou rappels : ces flux métier devront appeler le service après leur migration complète vers D1.

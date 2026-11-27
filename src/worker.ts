@@ -4,7 +4,7 @@ interface Statement {
   bind(...values: unknown[]): Statement;
   first<T = Record<string, unknown>>(): Promise<T | null>;
   all<T = Record<string, unknown>>(): Promise<{ success: boolean; results?: T[] }>;
-  run<T = Record<string, unknown>>(): Promise<{ success: boolean; meta: { last_row_id?: number }; results?: T[] }>;
+  run<T = Record<string, unknown>>(): Promise<{ success: boolean; meta: { last_row_id?: number; changes?: number }; results?: T[] }>;
 }
 interface Database { prepare(query: string): Statement }
 interface Env {
@@ -20,6 +20,40 @@ type UserRow = { id: number; first_name: string; last_name: string; email: strin
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))).map((b) => b.toString(16).padStart(2, "0")).join("");
 const newToken = () => Array.from(crypto.getRandomValues(new Uint8Array(32))).map((b) => b.toString(16).padStart(2, "0")).join("");
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
+
+async function sendVerificationEmail(request: Request, env: Env, user: Pick<UserRow, "id" | "first_name" | "last_name" | "email">): Promise<boolean> {
+  const token = newToken();
+  await env.DB.prepare(`INSERT INTO email_verifications(user_id,token_hash,expires_at,verified_at)
+    VALUES(?,?,datetime('now','+24 hours'),NULL)
+    ON CONFLICT(user_id) DO UPDATE SET token_hash=excluded.token_hash,expires_at=excluded.expires_at,verified_at=NULL,created_at=CURRENT_TIMESTAMP`)
+    .bind(user.id, await digest(token)).run();
+  if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) return false;
+  const link = new URL(`/verify-email?token=${encodeURIComponent(token)}`, request.url).toString();
+  const name = escapeHtml(`${user.first_name} ${user.last_name}`.trim());
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "accept": "application/json", "content-type": "application/json", "api-key": env.BREVO_API_KEY },
+      body: JSON.stringify({
+        sender: { email: env.BREVO_SENDER_EMAIL, name: env.BREVO_SENDER_NAME || "EventFlow" },
+        to: [{ email: user.email, name: `${user.first_name} ${user.last_name}`.trim() }],
+        subject: "Confirmez votre adresse e-mail — EventFlow",
+        textContent: `Bonjour ${user.first_name}, confirmez votre adresse e-mail pour activer votre compte EventFlow : ${link}\n\nCe lien expire dans 24 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.`,
+        htmlContent: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;color:#17152a"><h1 style="color:#6d3ce8">Bienvenue sur EventFlow</h1><p>Bonjour ${name},</p><p>Confirmez votre adresse e-mail pour activer votre compte.</p><p style="margin:28px 0"><a href="${link}" style="background:#6d3ce8;color:#fff;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Confirmer mon adresse e-mail</a></p><p>Ce lien est valable 24 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.</p></div>`,
+        tags: ["eventflow-email-verification"],
+      }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (response.ok) return true;
+    const failure = await response.json().catch(() => ({})) as { code?: string };
+    console.error("Brevo rejected verification email", response.status, failure.code || "provider_error");
+    return false;
+  } catch (error) {
+    console.error("Could not send verification email", error instanceof Error ? error.name : "network_error");
+    return false;
+  }
+}
 
 async function currentUser(request: Request, env: Env): Promise<UserRow | null> {
   const raw = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -200,7 +234,7 @@ async function authApi(request: Request, env: Env, url: URL): Promise<Response> 
     await env.DB.prepare("DELETE FROM api_tokens WHERE token_hash=?").bind(await digest(rawToken)).run();
     return json({ ok: true });
   }
-  if (action !== "login" && action !== "signup") return json({ error: "Action inconnue." }, 404);
+  if (!['login','signup','verify-email','resend-verification'].includes(action)) return json({ error: "Action inconnue." }, 404);
   let data: Record<string, unknown>;
   try {
     if (Number(request.headers.get("content-length") || 0) > 16_384) return json({ error: "Requête trop volumineuse." }, 413);
@@ -214,9 +248,36 @@ async function authApi(request: Request, env: Env, url: URL): Promise<Response> 
       hits=CASE WHEN datetime(window_started,'+1 minute')<=datetime('now') THEN 1 ELSE hits+1 END,
       window_started=CASE WHEN datetime(window_started,'+1 minute')<=datetime('now') THEN datetime('now') ELSE window_started END
     RETURNING hits`).bind(bucket).first<{ hits: number }>();
-  if ((counter?.hits || 0) > (action === "signup" ? 5 : 10)) return json({ error: "Trop de tentatives. Réessayez dans une minute." }, 429);
+  const maxAttempts = action === 'signup' ? 5 : action === 'resend-verification' ? 3 : action === 'verify-email' ? 20 : 10;
+  if ((counter?.hits || 0) > maxAttempts) return json({ error: "Trop de tentatives. Réessayez dans une minute." }, 429);
+
+  if (action === 'verify-email') {
+    const verificationToken = String(data.token || '');
+    if (!/^[a-f0-9]{64}$/i.test(verificationToken)) return json({ error: "Lien de confirmation invalide ou expiré." }, 422);
+    const verification = await env.DB.prepare(`SELECT user_id FROM email_verifications
+      WHERE token_hash=? AND verified_at IS NULL AND datetime(expires_at)>datetime('now')`)
+      .bind(await digest(verificationToken)).first<{ user_id: number }>();
+    if (!verification) return json({ error: "Ce lien de confirmation est expiré ou a déjà été utilisé. Demandez un nouveau lien." }, 410);
+    const confirmed = await env.DB.prepare(`UPDATE email_verifications SET verified_at=CURRENT_TIMESTAMP,token_hash=NULL
+      WHERE user_id=? AND verified_at IS NULL AND datetime(expires_at)>datetime('now')`)
+      .bind(verification.user_id).run();
+    if (!confirmed.meta.changes) return json({ error: "Ce lien de confirmation est expiré ou a déjà été utilisé. Demandez un nouveau lien." }, 410);
+    return json({ verified: true, message: "Adresse e-mail confirmée. Votre compte est activé; vous pouvez vous connecter." });
+  }
 
   const email = String(data.email || "").trim().toLowerCase();
+  if (action === 'resend-verification') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Saisissez une adresse e-mail valide." }, 422);
+    const pending = await env.DB.prepare(`SELECT u.id,u.first_name,u.last_name,u.email FROM users u
+      JOIN email_verifications v ON v.user_id=u.id WHERE u.email=? AND v.verified_at IS NULL`)
+      .bind(email).first<Pick<UserRow, 'id'|'first_name'|'last_name'|'email'>>();
+    if (pending) {
+      const sent = await sendVerificationEmail(request, env, pending);
+      if (!sent) return json({ error: "L’envoi a échoué. Vérifiez la configuration de l’expéditeur Brevo puis réessayez." }, 502);
+    }
+    return json({ sent: true, message: "Si cette adresse correspond à un compte en attente, un nouveau lien de confirmation vient d’être envoyé." });
+  }
+
   const password = String(data.password || "");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < (action === "signup" ? 8 : 1) || password.length > 200) return json({ error: "Vérifiez l’adresse e-mail et le mot de passe." }, 422);
   let user: UserRow | null;
@@ -234,9 +295,14 @@ async function authApi(request: Request, env: Env, url: URL): Promise<Response> 
       if (String(error).toLowerCase().includes("unique")) return json({ error: "Cette adresse e-mail est déjà utilisée." }, 409);
       throw error;
     }
+    const sent = await sendVerificationEmail(request, env, user);
+    if (!sent) return json({ error: "Votre compte est créé mais reste en attente de confirmation. L’e-mail n’a pas pu être envoyé; réessayez avec le bouton de renvoi.", message: "L’envoi a échoué. Vérifiez la configuration Brevo puis utilisez le bouton pour renvoyer le lien.", verificationRequired: true, email }, 502);
+    return json({ verificationRequired: true, email, message: "Un lien de confirmation vient d’être envoyé à votre adresse e-mail." }, 201);
   } else {
     user = await env.DB.prepare("SELECT id,first_name,last_name,email,password_hash,role FROM users WHERE email=?").bind(email).first<UserRow>();
     if (!user || !(await bcrypt.compare(password, user.password_hash))) return json({ error: "E-mail ou mot de passe incorrect." }, 401);
+    const verification = await env.DB.prepare("SELECT verified_at FROM email_verifications WHERE user_id=?").bind(user.id).first<{ verified_at: string | null }>();
+    if (verification && !verification.verified_at) return json({ error: "Confirmez votre adresse e-mail avant de vous connecter. Vous pouvez renvoyer le lien depuis la page d’inscription.", verificationRequired: true }, 403);
   }
 
   const token = newToken();
