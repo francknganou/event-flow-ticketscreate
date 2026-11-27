@@ -1,13 +1,25 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Menu, QrCode, User, X } from "lucide-react";
+import { ArrowLeft, Download, Menu, QrCode, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/contexts/AppContext";
+import { toast } from "sonner";
 
 export const Header = () => {
   const [isLoggedIn,setIsLoggedIn]=useState(false);const [userRole,setUserRole]=useState("");const [mobileOpen,setMobileOpen]=useState(false);
-  const navigate=useNavigate();const location=useLocation();const {t}=useApp();
+  const navigate=useNavigate();const location=useLocation();const {t,language}=useApp();
+  const [installPrompt,setInstallPrompt]=useState<(Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>})|null>(null);
   useEffect(()=>{setIsLoggedIn(localStorage.getItem("isLoggedIn")==="true");setUserRole(localStorage.getItem("userRole")||"");setMobileOpen(false);},[location.pathname]);
+  useEffect(()=>{
+    const handlePrompt=(event:Event)=>{event.preventDefault();setInstallPrompt(event as Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>});};
+    const handleInstalled=()=>{setInstallPrompt(null);toast.success(language==='fr'?'EventFlow est installée sur cet appareil.':'EventFlow is installed on this device.');};
+    window.addEventListener('beforeinstallprompt',handlePrompt);window.addEventListener('appinstalled',handleInstalled);
+    return()=>{window.removeEventListener('beforeinstallprompt',handlePrompt);window.removeEventListener('appinstalled',handleInstalled);};
+  },[language]);
+  const handleInstall=async()=>{
+    if(!installPrompt){toast.info(language==='fr'?'Ouvrez le menu de votre navigateur puis choisissez « Installer EventFlow » ou « Ajouter à l’écran d’accueil ».':'Open your browser menu and choose “Install EventFlow” or “Add to Home Screen”.');return;}
+    await installPrompt.prompt();const choice=await installPrompt.userChoice;if(choice.outcome==='accepted')setInstallPrompt(null);
+  };
   const handleLogout=async()=>{try{await fetch("/api/auth.php?action=logout",{method:"POST",headers:{Authorization:`Bearer ${localStorage.getItem("sessionToken")||""}`}});}catch{/* Clear the local session even if the API is offline. */} ["isLoggedIn","userRole","userEmail","sessionToken","userFirstName","userLastName"].forEach(k=>localStorage.removeItem(k));setIsLoggedIn(false);setUserRole("");navigate("/");};
   const showBack=location.pathname!=="/";
   const handleBack=()=>{
@@ -18,6 +30,7 @@ export const Header = () => {
   };
   const linkClass="rounded-lg px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white";
   const accountActions=<>
+    <Button variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white" onClick={()=>void handleInstall()} aria-label={language==='fr'?'Installer EventFlow':'Install EventFlow'}><Download className="mr-2 h-4 w-4"/>{language==='fr'?'Installer l’application':'Install app'}</Button>
     {showBack&&<Button variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4"/>{t("nav.back")}</Button>}
     {isLoggedIn?<>
       {(["admin","organizer"].includes(userRole))&&<Link to="/dashboard" className={linkClass}><User className="mr-2 inline h-4 w-4"/>{t("nav.dashboard")}</Link>}

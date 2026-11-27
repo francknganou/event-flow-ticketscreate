@@ -3,6 +3,9 @@
   "name": "event-flow",
   "main": "./src/worker.ts",
   "compatibility_date": "2026-11-25",
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
   "assets": {
     "directory": "./dist/",
     "binding": "ASSETS",

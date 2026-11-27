@@ -37,11 +37,14 @@ function noStoreJson(data: unknown, status = 200) {
 async function eventsApi(request: Request, env: Env, user: UserRow | null): Promise<Response> {
   const url = new URL(request.url);
   if (request.method !== "GET") return json({ error: "La gestion des événements n’est pas encore activée sur cette version D1." }, 501);
+  // Retain historical event details in D1 for ticket and financial records, but
+  // remove them from the catalogue 12 months after their end date.
+  const withinRetention = "datetime(COALESCE(NULLIF(e.end_date,''),e.event_date)) >= datetime('now','-12 months')";
   const where = user?.role === "admin"
-    ? "1=1"
+    ? withinRetention
     : user?.role === "organizer"
-      ? "((e.status='published' AND e.visibility='public') OR e.organizer_id=?)"
-      : "e.status='published' AND e.visibility='public'";
+      ? `(((e.status IN ('published','completed') AND e.visibility='public') OR e.organizer_id=?) AND ${withinRetention})`
+      : `(e.status IN ('published','completed') AND e.visibility='public') AND ${withinRetention}`;
   const stmt = env.DB.prepare(`SELECT e.id,e.organizer_id,e.title,e.event_date AS date,e.end_date AS endDate,
     e.location,e.price,e.image,e.capacity,e.available_tickets AS availableTickets,e.category,
     e.description,e.created_by AS createdBy,e.status,e.visibility
@@ -259,5 +262,12 @@ export default {
       return routeApi(request, env, incoming.pathname);
     }
     return env.ASSETS.fetch(request);
+  },
+  async scheduled(_controller: { cron: string; scheduledTime: number }, env: Env, _ctx: { waitUntil(promise: Promise<unknown>): void }): Promise<void> {
+    // Expired events become inactive automatically. Rows remain stored so
+    // existing ticket, order, payment and audit records keep their references.
+    await env.DB.prepare(`UPDATE events SET status='completed'
+      WHERE status IN ('published','ongoing')
+      AND datetime(COALESCE(NULLIF(end_date,''),event_date)) < datetime('now')`).run();
   },
 };

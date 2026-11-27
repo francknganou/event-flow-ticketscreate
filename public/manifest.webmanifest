@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "EventFlow — Événements et billetterie",
+  "short_name": "EventFlow",
+  "description": "Découvrez, gérez et réservez vos événements avec EventFlow.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#09070d",
+  "theme_color": "#5b36c8",
+  "categories": ["events", "entertainment", "business"],
+  "icons": [
+    { "src": "/eventflow-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/eventflow-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/eventflow-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Événements", "short_name": "Événements", "url": "/events", "icons": [{ "src": "/eventflow-icon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "Mes billets", "short_name": "Billets", "url": "/my-tickets", "icons": [{ "src": "/eventflow-icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

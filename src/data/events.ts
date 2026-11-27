@@ -11,6 +11,9 @@ export interface Event {
   id: string;
   title: string;
   date: string;
+  endDate?: string;
+  status?: string;
+  visibility?: string;
   location: string;
   price: number;
   image: string;

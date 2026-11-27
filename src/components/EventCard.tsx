@@ -10,7 +10,7 @@ import { Event } from "@/data/events";
 interface EventCardProps extends Event {}
 
 export const EventCard = (props: EventCardProps) => {
-  const { title, date, location, price, image, capacity, availableTickets, category } = props;
+  const { title, date, endDate, location, price, image, capacity, availableTickets, category } = props;
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [userRole, setUserRole] = useState("");
   const { formatPrice, language } = useApp();
@@ -56,11 +56,12 @@ export const EventCard = (props: EventCardProps) => {
   };
 
   const t = (texts as any)[language] || texts.en;
+  const isPast=new Date(endDate||date).getTime()<=Date.now();
   const remainingPercent=capacity>0?availableTickets/capacity:1;
   const availabilityLabel=availableTickets<=0?(language==='fr'?'Complet':'Sold out'):remainingPercent<=0.1?(language==='fr'?'Bientôt complet':'Almost full'):price===0?(language==='fr'?'Gratuit':'Free'):'';
 
   return (
-    <Card className="group overflow-hidden bg-card border-border shadow-card transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+    <Card className={`group overflow-hidden bg-card border-border shadow-card transition-[transform,box-shadow,border-color] duration-300 ease-out ${isPast?'opacity-75 grayscale-[.25]':'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl'}`}>
       <div className="relative">
         <img 
           src={image} 
@@ -73,6 +74,7 @@ export const EventCard = (props: EventCardProps) => {
         <div className="absolute top-3 right-3 bg-accent/90 backdrop-blur-sm px-2 py-1 rounded-md">
           <span className="text-xs font-bold text-accent-foreground">{formatPrice(price)}</span>
         </div>
+        {isPast&&<div className="absolute inset-0 grid place-items-center bg-black/35"><span className="rounded-full border border-white/40 bg-black/80 px-4 py-2 text-sm font-bold tracking-wide text-white">{language==='fr'?'ÉVÉNEMENT TERMINÉ':'EVENT ENDED'}</span></div>}
         {availabilityLabel&&<div className={`absolute bottom-3 left-3 rounded-md px-2.5 py-1 text-xs font-bold text-white shadow ${availableTickets<=0?'bg-zinc-800/90':remainingPercent<=0.1?'bg-orange-600/95':'bg-emerald-600/95'}`}>{availabilityLabel}</div>}
       </div>
       
@@ -103,11 +105,11 @@ export const EventCard = (props: EventCardProps) => {
             variant="hero" 
             size="sm" 
             className="w-full"
-            disabled={availableTickets === 0}
+            disabled={isPast||availableTickets === 0}
             onClick={handleReservation}
           >
             <Ticket className="w-4 h-4 mr-2" />
-            {availableTickets === 0 ? t.full : t.reserve}
+            {isPast?(language==='fr'?'Événement terminé':'Event ended'):availableTickets === 0 ? t.full : t.reserve}
           </Button>
           
           {userRole === 'admin' && (
@@ -123,11 +125,11 @@ export const EventCard = (props: EventCardProps) => {
           )}
         </div>
       
-      <BookingModal 
+      {!isPast&&<BookingModal
         event={props}
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
-      />
+      />}
       </CardContent>
     </Card>
   );
