@@ -47,4 +47,21 @@ L'export temporaire contient des données personnelles et des empreintes de mots
 
 ## Limite à connaître
 
-La base D1 et le schéma ne rendent pas à eux seuls l'API PHP/MySQL compatible avec Cloudflare Workers. Le Worker du projet doit être relié au binding `DB` et les routes PHP doivent être portées vers une API Worker/Pages avant que le site hébergé lise et écrive dans D1. Garder MySQL et sa sauvegarde jusqu'à cette bascule et à la validation des opérations.
+Le Worker est relié au binding `DB`. Il sert maintenant le catalogue public des événements, les formules, la lecture d'abonnement, la liste d'abonnements côté administrateur et un résumé du tableau de bord. Les écritures d'événements, commandes, paiements, remboursements, scans, messagerie et ajustements administrateur restent à porter avant de pouvoir être utilisées sur Cloudflare.
+
+## Appliquer le modèle additionnel marketplace
+
+Après que `d1-schema.sql` et les données MySQL ont été importés, appliquer une seule fois le schéma complémentaire (21 tables et règles de quota/stock) :
+
+```powershell
+npx wrangler d1 execute eventflow --remote --file=database/marketplace-v2-d1.sql
+```
+
+Cette migration ajoute les tables et colonnes du modèle marketplace; elle ne doit pas être exécutée une seconde fois, car les colonnes ajoutées avec `ALTER TABLE` ne sont pas idempotentes. Vérifier le résultat :
+
+```powershell
+npx wrangler d1 execute eventflow --remote --command="SELECT id,name FROM plans ORDER BY monthly_price;"
+npx wrangler d1 execute eventflow --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+```
+
+Conserver MySQL et sa sauvegarde jusqu'à validation de la migration et de toutes les routes métier. Les paiements restent inactifs tant que leurs prestataires et webhooks signés ne sont pas configurés.
