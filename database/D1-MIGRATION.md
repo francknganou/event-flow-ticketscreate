@@ -64,4 +64,13 @@ npx wrangler d1 execute eventflow --remote --command="SELECT id,name FROM plans 
 npx wrangler d1 execute eventflow --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
 ```
 
+Après l'évolution du schéma, copier les données des tables historiques vers les tables normalisées. Le fichier est idempotent et laisse les comptes utilisateurs et administrateurs intacts :
+
+```powershell
+npx wrangler d1 export eventflow --remote --output="$env:TEMP/eventflow-before-backfill.sql"
+npx wrangler d1 execute eventflow --remote --file=database/backfill-marketplace-v2.sql
+```
+
+Les anciens QR chiffrés restent dans `issued_tickets`; ils ne sont pas convertis en nouveaux jetons, car leur clé de déchiffrement n'est pas configurée comme secret Worker.
+
 Conserver MySQL et sa sauvegarde jusqu'à validation de la migration et de toutes les routes métier. Les paiements restent inactifs tant que leurs prestataires et webhooks signés ne sont pas configurés.
