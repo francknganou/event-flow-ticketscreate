@@ -11,6 +11,9 @@ interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
   DB: Database;
   API_ORIGIN?: string;
+  BREVO_API_KEY?: string;
+  BREVO_SENDER_EMAIL?: string;
+  BREVO_SENDER_NAME?: string;
 }
 type UserRow = { id: number; first_name: string; last_name: string; email: string; password_hash: string; role: string };
 
@@ -121,12 +124,62 @@ async function dashboardApi(request: Request, env: Env, user: UserRow | null): P
     notice: 'Les statistiques de ventes seront disponibles après l’activation des réservations sur le service D1.' });
 }
 
+async function emailApi(request: Request, env: Env, user: UserRow | null): Promise<Response> {
+  if (request.method !== "POST") return json({ error: "Méthode invalide." }, 405);
+  if (!user) return json({ error: "Connectez-vous pour tester la messagerie." }, 401);
+  if (user.role !== "admin") return json({ error: "Seul l’administrateur peut lancer le test e-mail." }, 403);
+  const body = await request.json().catch(() => null) as { action?: string } | null;
+  if (body?.action !== "test") return json({ error: "Action e-mail inconnue." }, 422);
+  const bucket = await digest(`brevo-test:${user.id}`);
+  const limit = await env.DB.prepare(`INSERT INTO api_rate_limits(bucket_key,hits,window_started) VALUES(?,1,datetime('now'))
+    ON CONFLICT(bucket_key) DO UPDATE SET hits=CASE WHEN datetime(window_started,'+1 hour')<=datetime('now') THEN 1 ELSE hits+1 END,
+    window_started=CASE WHEN datetime(window_started,'+1 hour')<=datetime('now') THEN datetime('now') ELSE window_started END
+    RETURNING hits`).bind(bucket).first<{ hits: number }>();
+  if ((limit?.hits || 0) > 3) return json({ error: "Limite de tests atteinte. Réessayez dans une heure." }, 429);
+  if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) {
+    return json({ error: "Brevo n’est pas encore configuré : ajoutez la clé API et l’adresse expéditeur vérifiée dans les paramètres Worker." }, 503);
+  }
+  let response: Response;
+  try {
+    response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "accept": "application/json", "content-type": "application/json", "api-key": env.BREVO_API_KEY },
+      body: JSON.stringify({
+        sender: { email: env.BREVO_SENDER_EMAIL, name: env.BREVO_SENDER_NAME || "EventFlow" },
+        to: [{ email: user.email, name: `${user.first_name} ${user.last_name}`.trim() }],
+        subject: "Test de messagerie EventFlow",
+        textContent: "La connexion entre EventFlow et Brevo fonctionne. Cet e-mail confirme que le service d’envoi transactionnel répond correctement.",
+        htmlContent: "<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:24px;color:#17152a\"><h1 style=\"color:#6d3ce8\">EventFlow · Test e-mail</h1><p>La connexion entre EventFlow et Brevo fonctionne.</p><p>Cet e-mail confirme que le service transactionnel répond correctement.</p></div>",
+        tags: ["eventflow-connection-test"],
+      }),
+      signal: AbortSignal.timeout(12_000),
+    });
+  } catch {
+    return json({ error: "Brevo n’a pas pu être joint. Vérifiez la connexion réseau puis réessayez." }, 502);
+  }
+  if (!response.ok) {
+    const failure = await response.json().catch(() => ({})) as { message?: string; code?: string };
+    console.error("Brevo rejected test email", response.status, failure.code || "provider_error");
+    return json({ error: response.status === 401 || response.status === 403
+      ? "Brevo a refusé la clé API. Vérifiez sa validité et ses droits."
+      : response.status === 400
+        ? "Brevo a refusé l’expéditeur ou le destinataire. Vérifiez que l’adresse expéditeur est validée dans Brevo."
+        : "Brevo n’a pas accepté le message. Vérifiez les paramètres de messagerie dans Brevo." }, 502);
+  }
+  const result = await response.json().catch(() => ({})) as { messageId?: string };
+  await env.DB.prepare(`INSERT INTO audit_logs(actor_user_id,actor_email,action,entity_type,entity_id,details)
+    VALUES(?,?,'email.test_sent','email',?,?)`).bind(user.id,user.email,result.messageId || "brevo",JSON.stringify({provider:"brevo",to:user.email})).run();
+  return noStoreJson({ sent: true, recipient: user.email, messageId: result.messageId || null,
+    message: "Brevo a accepté l’e-mail de test. Vérifiez la boîte de réception et le dossier indésirables." });
+}
+
 async function routeApi(request: Request, env: Env, path: string): Promise<Response> {
   try {
     const user = await currentUser(request, env);
     if (path === '/api/events.php') return eventsApi(request, env, user);
     if (path === '/api/subscription.php') return subscriptionApi(request, env, user);
     if (path === '/api/dashboard.php') return dashboardApi(request, env, user);
+    if (path === '/api/email.php') return emailApi(request, env, user);
     return json({ error: `Le service « ${path.split('/').pop()} » n’est pas encore migré vers D1.` }, 501);
   } catch (error) {
     console.error('D1 API request failed', path, error);
